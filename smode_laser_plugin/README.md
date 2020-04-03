@@ -59,6 +59,18 @@ We should now have a `smode_laser_plugin.h` file containing all the necessary
 extern declarations for calling into our static library! We are now ready to
 include our static library and header in our plugin.
 
+## Generating Documentation
+
+You can generate the API reference documentation for the library with the
+following:
+
+```
+cargo doc --open
+```
+
+This will compile the documentation for the library and open it with the
+system's default web browser.
+
 [1]: https://www.rust-lang.org/tools/install
 [2]: https://www.rust-lang.org/learn
 [3]: https://github.com/eqrion/cbindgen
