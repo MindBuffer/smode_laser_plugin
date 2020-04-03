@@ -1,0 +1,45 @@
+name: smode_laser_plugin
+
+on: [push, pull_request]
+
+jobs:
+  # Check code formatting in Rust library.
+  rustfmt-check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install stable
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+        components: rustfmt
+    - name: Run rustfmt
+      uses: actions-rs/cargo@v1
+      with:
+        command: fmt
+        args: --manifest-path smode_laser_plugin/Cargo.toml --all -- --check
+
+  # Test the Rust library on windows.
+  cargo-test-windows:
+    strategy:
+      matrix:
+        version: [x86_64, i686]
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Install llvm and clang
+      run: choco install llvm
+    - name: Install stable
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        target: ${{ matrix.version }}-pc-windows-msvc
+        override: true
+    - name: Run test
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: --manifest-path smode_laser_plugin\Cargo.toml --all --verbose
