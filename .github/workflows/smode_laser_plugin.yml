@@ -28,7 +28,7 @@ jobs:
         version: [x86_64, i686]
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Install llvm and clang
       run: choco install llvm
     - name: Install stable

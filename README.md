@@ -1,4 +1,4 @@
-# smode_laser_plugin
+# smode_laser_plugin [![Build Status](https://github.com/mindbuffer/smode_laser_plugin/workflows/smode_laser_plugin/badge.svg)](https://github.com/mindbuffer/smode_laser_plugin/actions)
 
 Smode plugin for sending streams to LASER projectors.
 
