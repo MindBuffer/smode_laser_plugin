@@ -16,4 +16,4 @@ Smode plugin for sending streams to LASER projectors.
 *TODO: See if we can automate the static library and header generation and
 updating the XML.*
 
-[1]: "smode_laser_plugin/README.md"
+[1]: https://github.com/MindBuffer/smode_laser_plugin/tree/master/smode_laser_plugin
