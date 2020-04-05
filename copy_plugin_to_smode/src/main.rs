@@ -33,7 +33,6 @@ fn main() {
         .join("build")
         .join("Visual Studio 15 2017");
 
-    dbg!(&plugin_build_dir);
     let release_build = Path::new(&plugin_build_dir)
         .join("Release")
         .join("Laser.dll");
