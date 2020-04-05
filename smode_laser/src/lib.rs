@@ -12,6 +12,6 @@ pub use nannou_laser::*;
 
 // TODO: Add SMODE specific items here.
 #[no_mangle]
-pub extern fn rust_test_func() -> u32 {
+pub extern "C" fn rust_test_func() -> u32 {
     27302
 }
