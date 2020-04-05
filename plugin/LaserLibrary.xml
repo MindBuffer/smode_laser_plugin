@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<library plugin="true" namespace="smode" precompiledHeader="">
+
+  <description language="us-en">Smode Laser plugin.</description>
+  <include fromApi="true" file="SmodeSDK/SmodeSDK.h" public="true"/>
+
+  <class name="Laser" base="Tool">
+    <variable class="Boolean" name="on" default="true"/>
+    <variable class="WeakPointer(Layer)" name="target"/>
+  </class>
+
+</library>
