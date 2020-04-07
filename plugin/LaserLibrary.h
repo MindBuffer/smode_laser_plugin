@@ -21,6 +21,7 @@ extern oil::Class* getClassPointerByLookup(const LaserDeviceFactory* );
 extern oil::Class* getClassPointerByLookup(const LaserDeviceIdentifier* );
 extern oil::Class* getClassPointerByLookup(const LaserDevice* );
 
+
 smode::PluginLibrary* createpluginLibrary();
 
 }; /* namespace smode */

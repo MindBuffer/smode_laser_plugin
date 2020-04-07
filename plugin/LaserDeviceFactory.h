@@ -1,8 +1,15 @@
+/* -------------------------------------- . ---------------------------------- .
+| Filename : LaserDeviceFactory.h         |   							       |
+| Author   : MindBuffer                   |                                    |
+| Started  : 05/04/2020 07:16             |                                    |
+` --------------------------------------- . --------------------------------- */
+
 #ifndef SMODE_LASER_DEVICE_FACTORY_H_
 # define SMODE_LASER_DEVICE_FACTORY_H_
 
 #include "LaserLibrary.h"
 #include "LaserDeviceIdentifier.h"
+#include "LaserDevice.h"
 #include "../smode_laser/smode_laser.h"
 
 namespace smode

@@ -5,12 +5,14 @@ set(SMODE_SDK_PATH "C:/Program Files (x86)/SmodeTech/Smode SDK")
 set(CMAKE_MODULE_PATH "${SMODE_SDK_PATH}/CMake")
 find_package(SmodeSDK REQUIRED)
 
-smode_add_plugin(Laser
-  EDITOR "Laser example plugin"
-  SOURCES
-    LaserDeviceFactory.h
-    LaserDevice.h
-    LaserDeviceIdentifier.h)
+SET (LASER_PLUGIN_SOURCES
+  LaserDeviceIdentifier.h
+  LaserDevice.h
+  LaserDeviceFactory.h
+  Laser.h
+)
+
+smode_add_plugin(Laser EDITOR "Laser example plugin" SOURCES ${LASER_PLUGIN_SOURCES})
 
 # The following 4 system static libs are required by the `smode_laser.lib`.
 # These can be discovered by building the rust project with:

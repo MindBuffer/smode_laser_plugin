@@ -5,6 +5,7 @@
 ` ---------------------------- . ------------------------------------------ */
 
 #include "LaserLibrary.h"
+#include "Laser.h" // automatic
 #include "LaserDevice.h" // automatic
 #include "LaserDeviceFactory.h" // automatic
 #include "LaserDeviceIdentifier.h" // automatic
@@ -52,7 +53,7 @@ class LaserDeviceClass : public oil::CppClass
 {
 public:
   oil::Class* declareBaseClass() const override
-    {return getClassRelativeToThis("Device");}
+    {return getClassRelativeToThis("ControlDevice");}
 
   bool isAbstract() const override
     {return false;}

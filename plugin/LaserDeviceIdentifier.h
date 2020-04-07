@@ -1,3 +1,9 @@
+/* -------------------------------------- . ---------------------------------- .
+| Filename : LaserDeviceIdentifier.h      |   							       |
+| Author   : MindBuffer                   |                                    |
+| Started  : 05/04/2020 07:16             |                                    |
+` --------------------------------------- . --------------------------------- */
+
 #ifndef SMODE_LASER_DEVICE_IDENTIFIER_H_
 # define SMODE_LASER_DEVICE_IDENTIFIER_H_
 

@@ -5,13 +5,7 @@
   <description language="us-en">Smode Laser plugin.</description>
   <include fromApi="true" file="SmodeSDK/SmodeSDK.h" public="true"/>
 
-  <class name="LaserDeviceFactory" base="DeviceFactory">
-    <!-- <variable class="Boolean" name="on" default="true"/> -->
-    <!-- <variable class="WeakPointer(Layer)" name="target"/> -->
-  </class>
-
+  <class name="LaserDeviceFactory" base="DeviceFactory"></class>
   <class name="LaserDeviceIdentifier" base="StringDeviceIdentifier"> </class>
-  <class name="LaserDevice" base="Device"> </class>
-
-
+  <class name="LaserDevice" base="ControlDevice"> </class>
 </library>
