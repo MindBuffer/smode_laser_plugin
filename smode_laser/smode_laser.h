@@ -3,6 +3,9 @@
 #include <cstdlib>
 #include <new>
 
+namespace smode {
+namespace laser {
+
 /// For the blank ab: `[a, a.blanked(), b.blanked(), (0..delay).map(|_| b.blanked())]`.
 static const uint32_t BLANK_MIN_POINTS = 3;
 
@@ -362,3 +365,6 @@ uint32_t rust_test_func();
 void stream_config_default(StreamConfig *conf);
 
 } // extern "C"
+
+} // namespace laser
+} // namespace smode

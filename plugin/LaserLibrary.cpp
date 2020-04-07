@@ -5,50 +5,66 @@
 ` ---------------------------- . ------------------------------------------ */
 
 #include "LaserLibrary.h"
-#include "Laser.h" // automatic
+#include "LaserDevice.h" // automatic
+#include "LaserDeviceFactory.h" // automatic
+#include "LaserDeviceIdentifier.h" // automatic
 
 namespace smode
 {
 
-class LaserClass : public oil::CppClass
+class LaserDeviceFactoryClass : public oil::CppClass
 {
 public:
   oil::Class* declareBaseClass() const override
-    {return getClassRelativeToThis("Tool");}
+    {return getClassRelativeToThis("DeviceFactory");}
 
   bool isAbstract() const override
     {return false;}
 
   Object* createObjectImpl() const override
-    {return new Laser();}
+    {return new LaserDeviceFactory();}
 
-  void declareMemberVariables(ExecutionContext& context) override
-  {
-    StateMap onLaserParameters;
-    onLaserParameters["default"] = State::createFromString(context, "true", "Declaration of Laser::on::default");
-    addMemberVariable(context, "Boolean", "on", false, onLaserParameters);
-    addMemberVariable(context, "WeakPointer(Layer)", "target", false);
-  }
-  const Object& getMemberVariable(const Object& __obj__, size_t __variableIndex__) const override
-  {
-    const Laser& __object__ = (const Laser& )__obj__;
-    const size_t __baseClassNumMemberVariables__ = getBaseClassNumMemberVariables();
-    if (__variableIndex__ < __baseClassNumMemberVariables__)
-      return getBaseClass()->getMemberVariable(__object__, __variableIndex__);
-    __variableIndex__ -= __baseClassNumMemberVariables__;
 
-    switch (__variableIndex__) // if you have compilation error bellow, this is probably because you miss to add OIL_OBJECT macro to your class.
-    {
-      case 0: return __object__.on;
-      case 1: return __object__.target;
-      default: jassertfalse; return __object__;
-    };
-  }
-
-  JUCE_LEAK_DETECTOR(LaserClass);
+  JUCE_LEAK_DETECTOR(LaserDeviceFactoryClass);
 };
 
-oil::Class* Laser::staticClass = nullptr;
+oil::Class* LaserDeviceFactory::staticClass = nullptr;
+
+class LaserDeviceIdentifierClass : public oil::CppClass
+{
+public:
+  oil::Class* declareBaseClass() const override
+    {return getClassRelativeToThis("StringDeviceIdentifier");}
+
+  bool isAbstract() const override
+    {return false;}
+
+  Object* createObjectImpl() const override
+    {return new LaserDeviceIdentifier();}
+
+
+  JUCE_LEAK_DETECTOR(LaserDeviceIdentifierClass);
+};
+
+oil::Class* LaserDeviceIdentifier::staticClass = nullptr;
+
+class LaserDeviceClass : public oil::CppClass
+{
+public:
+  oil::Class* declareBaseClass() const override
+    {return getClassRelativeToThis("Device");}
+
+  bool isAbstract() const override
+    {return false;}
+
+  Object* createObjectImpl() const override
+    {return new LaserDevice();}
+
+
+  JUCE_LEAK_DETECTOR(LaserDeviceClass);
+};
+
+oil::Class* LaserDevice::staticClass = nullptr;
 
 
 class pluginLibrary : public smode::PluginLibrary
@@ -56,13 +72,19 @@ class pluginLibrary : public smode::PluginLibrary
 public:
   pluginLibrary()
   {
-    addClass("Laser", Laser::staticClass = new LaserClass());
+    addClass("LaserDeviceFactory", LaserDeviceFactory::staticClass = new LaserDeviceFactoryClass());
+    addClass("LaserDeviceIdentifier", LaserDeviceIdentifier::staticClass = new LaserDeviceIdentifierClass());
+    addClass("LaserDevice", LaserDevice::staticClass = new LaserDeviceClass());
   }
 
   ~pluginLibrary() override
   {
-    removeClass(Laser::staticClass);
-    Laser::staticClass = nullptr;
+    removeClass(LaserDevice::staticClass);
+    LaserDevice::staticClass = nullptr;
+    removeClass(LaserDeviceIdentifier::staticClass);
+    LaserDeviceIdentifier::staticClass = nullptr;
+    removeClass(LaserDeviceFactory::staticClass);
+    LaserDeviceFactory::staticClass = nullptr;
   }
 
   String getName() const override
@@ -78,7 +100,9 @@ public:
   JUCE_LEAK_DETECTOR(pluginLibrary);
 };
 
-oil::Class* getClassPointerByLookup(const Laser*) {return Laser::staticClass;}
+oil::Class* getClassPointerByLookup(const LaserDeviceFactory*) {return LaserDeviceFactory::staticClass;}
+oil::Class* getClassPointerByLookup(const LaserDeviceIdentifier*) {return LaserDeviceIdentifier::staticClass;}
+oil::Class* getClassPointerByLookup(const LaserDevice*) {return LaserDevice::staticClass;}
 
 }; /* namespace smode */
 

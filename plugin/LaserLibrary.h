@@ -12,11 +12,14 @@
 namespace smode
 {
 
-class Laser;
+class LaserDeviceFactory;
+class LaserDeviceIdentifier;
+class LaserDevice;
 class PluginLibrary;
 
-extern oil::Class* getClassPointerByLookup(const Laser* );
-
+extern oil::Class* getClassPointerByLookup(const LaserDeviceFactory* );
+extern oil::Class* getClassPointerByLookup(const LaserDeviceIdentifier* );
+extern oil::Class* getClassPointerByLookup(const LaserDevice* );
 
 smode::PluginLibrary* createpluginLibrary();
 
