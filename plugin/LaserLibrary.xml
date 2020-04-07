@@ -5,6 +5,31 @@
   <description language="us-en">Smode Laser plugin.</description>
   <include fromApi="true" file="SmodeSDK/SmodeSDK.h" public="true"/>
 
+  <!-- Laser Device -->
+  <class name="LaserDevice" base="ControlDevice" abstract="yes"/>
+  <class name="LaserDeviceSelector" base="ControlDeviceSelector"/>
+
+  <!-- TODO: EtherDreamLaserDevice, EtherDreamLaserDeviceFactory -->
+  
+  <!-- Laser Renderer -->
+  <class name="LaserPoint" generated="cpp">
+    <attribute name="shaderSourceCode" stringfile="LaserPoint.sglsl"/>
+  </class>
+  <class name="LaserInputGeometryShader" base="GeometryShader" generated="cpp">
+    <attribute name="shaderSourceCode" stringfile="LaserInputGeometryShader.sglsl"/>
+    <attribute name="inputGeometryType">"lines"</attribute>
+    <attribute name="outputGeometryType">"lines"</attribute>
+  </class>
+  <class name="LaserInputGeometry" base="RenderedGeometry" abstract="true"/>
+
+  <class name="LaserGeometryRenderer" base="GeometryLayerUser">
+    <attribute name="friendlyName">"Laser Renderer"</attribute>
+    <attribute name="secret">true</attribute>
+
+    <variable class="LaserDeviceSelector" name="device"/>
+  </class>
+ 
+   <!-- Legacy (should not be required anymore) -->
   <class name="Laser" base="Tool">
     <variable class="Boolean" name="on" default="true"/>
     <variable class="WeakPointer(Layer)" name="target"/>
