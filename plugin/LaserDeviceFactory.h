@@ -19,7 +19,7 @@ namespace smode
 		// TODO: Should produce a nicer mac address string.
 		String s;
 		for (int i = 0; i < 6; i++) {
-			 s += String(mac_address[i]);
+			s += String(mac_address[i]);
 		}
 		return s;
 	}
