@@ -9,9 +9,9 @@
     <attribute name="deviceBaseClass">ClockDevice</attribute>
     <attribute name="deviceClass">CurrentTimeClockDevice</attribute>
   </class>
-  <class name="LaserDeviceIdentifier" base="StringDeviceIdentifier"> </class>
-  <class name="LaserDevice" base="ControlDevice"> </class>
-  <class name="LaserDeviceSelector" base="ControlDeviceSelector" generated="cpp"/>
+  <class name="LaserDeviceIdentifier" base="StringDeviceIdentifier"/>
+  <class name="LaserDevice" base="ControlDevice"/>
+  <class name="LaserDeviceSelector" base="ControlDeviceSelector"/>
 
   <!-- Laser Renderer -->
   <class name="LaserPoint" generated="cpp">
