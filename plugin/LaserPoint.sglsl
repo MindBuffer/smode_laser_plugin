@@ -1,0 +1,13 @@
+/* -------------------------------------- . ---------------------------------- .
+| Filename : LaserPoint.sglsl             | Laser Point                        |
+| Author   : Francis Maes                 |                                    |
+| Started  : 07/04/2020 08:06             |                                    |
+` --------------------------------------- . --------------------------------- */
+
+struct LaserPoint
+{
+  vec3 position; // not used
+  vec2 texCoord;
+  vec3 color;
+  int weight;
+};

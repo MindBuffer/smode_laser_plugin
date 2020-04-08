@@ -1,0 +1,31 @@
+/* -------------------------------------- . ------------------------------------ .
+| Filename : LaserInputGeometryShader.sglsl | Laser Input                        |
+| Author   : Francis Maes                   | geometry shader                    |
+| Started  : 07/04/2020 07:54               |                                    |
+` --------------------------------------- . ----------------------------------- */
+
+#include "VertexAttributes.sglsl"
+#include "LaserPoint.sglsl"
+
+layout (lines) in;
+layout (line_strip) out;
+layout (max_vertices = 2) out;
+
+struct LaserInputGeometryShader
+{
+  void emit(const in VertexAttributes vertex)
+  {
+    LaserPoint res;
+    res.position = homogeneousTransform(globals.modelViewProjectionWindow, vertex.position);
+    res.texCoord = homogeneousTransform(globals.modelViewProjectionWindow, vertex.position).xy;
+    res.color = vertex.color.rgb * vertex.color.a;
+    res.weight = 0; // not used yet
+    emitVertex(res);
+  }
+
+  LaserPoint sglslMain(const VertexAttributes vertices[])
+  {
+    emit(vertices[0]);
+    emit(vertices[1]);
+  }
+};
