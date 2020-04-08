@@ -1,5 +1,5 @@
 /* -------------------------------------- . ---------------------------------- .
-| Filename : LaserDeviceIdentifier.h      |   							       |
+| Filename : LaserDeviceIdentifier.h      |                                    |
 | Author   : MindBuffer                   |                                    |
 | Started  : 05/04/2020 07:16             |                                    |
 ` --------------------------------------- . --------------------------------- */
@@ -11,16 +11,16 @@
 
 namespace smode
 {
-	class LaserDeviceIdentifier : public StringDeviceIdentifier
-	{
-	public:
-	LaserDeviceIdentifier(const String& factory, const String& value)
-		: StringDeviceIdentifier(factory, value) {}
-	LaserDeviceIdentifier() {}
+  class LaserDeviceIdentifier : public StringDeviceIdentifier
+  {
+  public:
+  LaserDeviceIdentifier(const String& factory, const String& value)
+    : StringDeviceIdentifier(factory, value) {}
+  LaserDeviceIdentifier() {}
 
-	OIL_OBJECT(LaserDeviceIdentifier);
+  OIL_OBJECT(LaserDeviceIdentifier);
 
-	};
+  };
 
 }; /* namespace smode */
 
