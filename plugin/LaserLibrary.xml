@@ -5,9 +5,10 @@
   <description language="us-en">Smode Laser plugin.</description>
   <include fromApi="true" file="SmodeSDK/SmodeSDK.h" public="true"/>
 
-  <class name="Laser" base="Tool">
-    <variable class="Boolean" name="on" default="true"/>
-    <variable class="WeakPointer(Layer)" name="target"/>
+  <class name="LaserDeviceFactory" base="DeviceFactory">
+    <attribute name="deviceBaseClass">ClockDevice</attribute>
+    <attribute name="deviceClass">CurrentTimeClockDevice</attribute>
   </class>
-
+  <class name="LaserDeviceIdentifier" base="StringDeviceIdentifier"> </class>
+  <class name="LaserDevice" base="ControlDevice"> </class>
 </library>

@@ -1,2 +1,4 @@
 build/
+LaserLibrary.cpp
+LaserLibrary.h
 .DS_Store
