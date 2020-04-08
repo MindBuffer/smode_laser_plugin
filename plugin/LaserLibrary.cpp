@@ -25,6 +25,14 @@ public:
   Object* createObjectImpl() const override
     {return new LaserDeviceFactory();}
 
+  void declareAttributes(ExecutionContext& context) override
+  {
+    setAttribute(context, "deviceBaseClass", State::createFromString(context, "ClockDevice"
+    , "Declaration of LaserDeviceFactory::deviceBaseClass"));
+    setAttribute(context, "deviceClass", State::createFromString(context, "CurrentTimeClockDevice"
+    , "Declaration of LaserDeviceFactory::deviceClass"));
+  }
+
 
   JUCE_LEAK_DETECTOR(LaserDeviceFactoryClass);
 };
