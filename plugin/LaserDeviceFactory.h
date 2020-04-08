@@ -46,10 +46,6 @@ namespace smode
 
     bool initializeFactory(Engine& engine, String& failureReason) override
     {
-      if (!BaseClass::initializeFactory(engine, failureReason)) {
-        return false;
-      }
-
       float dac_timeout_secs = 1.5;
       smode::laser::api_new(&api);
       smode::laser::Result res = smode::laser::detect_dacs_async(&api, dac_timeout_secs, &dac_detector);
@@ -58,6 +54,11 @@ namespace smode
         failureReason = "Failed to spawn DAC detection thread: " + String(err);
         return false;
       }
+
+      if (!BaseClass::initializeFactory(engine, failureReason)) {
+        return false;
+      }
+
       return true;
     }
 
@@ -94,7 +95,6 @@ namespace smode
 
     Device* createDevice(const DeviceIdentifier& identifier, GraphicsContext& graphics) const override
     {
-      DBG("createDevice");
       for (auto dac : detected_dacs) {
         String mac_string = macAddressToString(dac.kind.ether_dream.broadcast.mac_address);
         if (mac_string == identifier.getFriendlyName()) {
