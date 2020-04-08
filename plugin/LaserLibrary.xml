@@ -6,8 +6,8 @@
   <include fromApi="true" file="SmodeSDK/SmodeSDK.h" public="true"/>
 
   <class name="LaserDeviceFactory" base="DeviceFactory">
-    <attribute name="deviceBaseClass">ClockDevice</attribute>
-    <attribute name="deviceClass">CurrentTimeClockDevice</attribute>
+    <attribute name="deviceBaseClass">ControlDevice</attribute>
+    <attribute name="deviceClass">LaserDevice</attribute>
   </class>
   <class name="LaserDeviceIdentifier" base="StringDeviceIdentifier"/>
   <class name="LaserDevice" base="ControlDevice"/>
