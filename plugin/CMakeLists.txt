@@ -6,9 +6,14 @@ set(CMAKE_MODULE_PATH "${SMODE_SDK_PATH}/CMake")
 find_package(SmodeSDK REQUIRED)
 
 SET (LASER_PLUGIN_SOURCES
+  LaserPoint.sglsl
+  LaserInputGeometryShader.sglsl
   LaserDeviceIdentifier.h
   LaserDevice.h
   LaserDeviceFactory.h
+  LaserDeviceSelector.h
+  LaserInputGeometry.h
+  LaserGeometryRenderer.h
   Laser.h
 )
 
