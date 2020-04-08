@@ -95,13 +95,18 @@ namespace smode
 
     Device* createDevice(const DeviceIdentifier& identifier, GraphicsContext& graphics) const override
     {
+      DBG("createDevice Begin");
       for (auto dac : detected_dacs) {
         String mac_string = macAddressToString(dac.kind.ether_dream.broadcast.mac_address);
         if (mac_string == identifier.getFriendlyName()) {
           const LaserDeviceIdentifier* typedIdentifier = dynamicCast<const LaserDeviceIdentifier>(&identifier);
+          DBG("createDevice Success!");
+
           return typedIdentifier ? new LaserDevice(*typedIdentifier) : nullptr;
         }
       }
+      DBG("createDevice Fail");
+
       return nullptr;
     }
 
