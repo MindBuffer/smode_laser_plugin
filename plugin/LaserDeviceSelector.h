@@ -16,6 +16,11 @@ namespace smode
   public:
     LaserDeviceSelector() {}
 
+    bool acceptDeviceClass(Class* deviceClass) const override
+    {
+      return deviceClass->inheritsFrom(oil::getClass("LaserDevice"));
+    }
+
     OIL_ABSTRACT_OBJECT(LaserDeviceSelector);
   };
 
