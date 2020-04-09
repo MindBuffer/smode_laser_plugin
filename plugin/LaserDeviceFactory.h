@@ -10,7 +10,7 @@
 #include "LaserLibrary.h"
 #include "LaserDeviceIdentifier.h"
 #include "LaserDevice.h"
-#include "../smode_laser/smode_laser.h"
+//#include "../smode_laser/smode_laser.h"
 
 namespace smode
 {
@@ -46,6 +46,7 @@ namespace smode
 
     bool initializeFactory(Engine& engine, String& failureReason) override
     {
+      DBG("initializeFactory Start");
       float dac_timeout_secs = 1.5;
       smode::laser::api_new(&api);
       smode::laser::Result res = smode::laser::detect_dacs_async(&api, dac_timeout_secs, &dac_detector);
@@ -58,6 +59,8 @@ namespace smode
       if (!BaseClass::initializeFactory(engine, failureReason)) {
         return false;
       }
+
+      DBG("initializeFactory END");
 
       return true;
     }
@@ -95,17 +98,24 @@ namespace smode
 
     Device* createDevice(const DeviceIdentifier& identifier, GraphicsContext& graphics) const override
     {
-      DBG("createDevice Begin");
+      DBG("createDevice Start");
+
       for (auto dac : detected_dacs) {
         String mac_string = macAddressToString(dac.kind.ether_dream.broadcast.mac_address);
-        if (mac_string == identifier.getFriendlyName()) {
-          const LaserDeviceIdentifier* typedIdentifier = dynamicCast<const LaserDeviceIdentifier>(&identifier);
-          DBG("createDevice Success!");
+        DBG("mac_string");
 
-          return typedIdentifier ? new LaserDevice(*typedIdentifier) : nullptr;
+        if (mac_string == identifier.getFriendlyName()) {
+          DBG("typedIdentifier");
+
+          //if (typedIdentifier) {
+            LaserDevice* device = new LaserDevice(identifier);
+            device->dac = dac;
+            device->laser_api = &api;
+            DBG("SUCCESS create device");
+            return device;
+          //}
         }
       }
-      DBG("createDevice Fail");
 
       return nullptr;
     }
@@ -113,7 +123,7 @@ namespace smode
     OIL_OBJECT(LaserDeviceFactory);
 
   private:
-    smode::laser::Api api;
+    mutable smode::laser::Api api;
     smode::laser::DetectDacsAsync dac_detector;
     std::vector<smode::laser::DetectedDac> detected_dacs;
     typedef DeviceFactory BaseClass;

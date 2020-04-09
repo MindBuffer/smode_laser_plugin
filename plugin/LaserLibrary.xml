@@ -10,7 +10,16 @@
     <attribute name="deviceClass">LaserDevice</attribute>
   </class>
   <class name="LaserDeviceIdentifier" base="StringDeviceIdentifier"/>
-  <class name="LaserDevice" base="ControlDevice"/>
+  
+  <class name="LaserDevice" base="ControlDevice">
+    <variable class="PositiveInteger" name="dacPointsPerSecond" default="10000"/>
+    <variable class="PositiveInteger" name="latency" default="166"/>
+    <variable class="PositiveInteger" name="targetFps" default="60"/>
+    <variable class="Real" name="distancePerPoint" default="0.1"/>
+    <variable class="PositiveInteger" name="blankDelayPoints" default="10"/>
+    <variable class="Real" name="radiansPerPoint" default="0.6"/>
+  </class>
+  
   <class name="LaserDeviceSelector" base="ControlDeviceSelector"/>
 
   <!-- Laser Renderer -->
