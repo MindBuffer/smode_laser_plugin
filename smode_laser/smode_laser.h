@@ -24,6 +24,9 @@ static const uint32_t DEFAULT_FRAME_HZ = 60;
 /// The default rate at which the DAC should request points per second.
 static const uint32_t DEFAULT_POINT_HZ = 10000;
 
+/// The maximum number of enqueued frame messages allowed to avoid leaking.
+static const uintptr_t QUEUE_LIMIT = 8;
+
 enum class IpAddrVersion {
   V4,
   V6,
@@ -36,6 +39,12 @@ enum class Result {
   DetectDacsAsyncFailed,
 };
 
+/// Indicator for distinguishing between whether a sequence is of points or lines.
+enum class SequenceType {
+  Points,
+  Lines,
+};
+
 struct ApiInner;
 
 struct BufferInner;
@@ -43,6 +52,12 @@ struct BufferInner;
 struct DetectDacsAsyncInner;
 
 struct FrameInner;
+
+struct FrameMsgInner;
+
+struct FrameReceiverInner;
+
+struct FrameSenderInner;
 
 struct FrameStreamInner;
 
@@ -210,6 +225,12 @@ struct Frame {
   FrameInner *inner;
 };
 
+/// A fully prepared frame containing a list of sequences to render during the frame render
+/// callback.
+struct FrameMsg {
+  FrameMsgInner *inner;
+};
+
 /// A position in 2D space represented by x and y coordinates.
 using Position = float[2];
 
@@ -238,6 +259,19 @@ struct Point {
 };
 /// The default weight for points used to draw lines.
 static const uint32_t Point_DEFAULT_LINE_POINT_WEIGHT = 0;
+
+/// Stored by the thread responsible for "push"ing frames to the device.
+///
+/// The queue is bounded to avoid leaking in the case that the device callback is stopped while the
+/// pushing thread continues.
+struct FrameSender {
+  FrameSenderInner *inner;
+};
+
+/// Used within the device callback to retrieve the most recent frame msg that has been pushed.
+struct FrameReceiver {
+  FrameReceiverInner *inner;
+};
 
 struct StreamConfig {
   const DetectedDac *detected_dac;
@@ -315,6 +349,10 @@ void detect_dacs_async_drop(DetectDacsAsync detect);
 /// Used for retrieving the last error that occurred from the API.
 const char *detect_dacs_async_last_error(const DetectDacsAsync *detect);
 
+/// Extend the contents of the given `Frame` with the sequences contained within the given
+/// `FrameMsg`.
+void extend_frame_with_msg(Frame *frame, const FrameMsg *frame_msg);
+
 /// Add a sequence of consecutive lines.
 ///
 /// If some points already exist in the frame, this method will create a blank segment between the
@@ -331,7 +369,30 @@ uint32_t frame_hz(const Frame *frame);
 
 uint32_t frame_latency_points(const Frame *frame);
 
+/// Add the given sequence to the frame message.
+///
+/// This function copies the given points into a new new slice owned by the `FrameMsg`.
+void frame_msg_add_sequence(FrameMsg *frame_msg,
+                            SequenceType ty,
+                            const Point *points,
+                            uintptr_t len);
+
+/// Take ownership over the given `FrameMsg` and free its resources.
+void frame_msg_drop(FrameMsg frame_msg);
+
+/// Create a new empty frame that we may begin to prepare.
+void frame_msg_new(FrameMsg *frame_msg);
+
 uint32_t frame_point_hz(const Frame *frame);
+
+/// Create a new queue for safely passing prepared frames across threads.
+void frame_queue_new(FrameSender *f_tx, FrameReceiver *f_rx);
+
+/// Take ownership over the given `FrameReceiver` and free its resources.
+void frame_receiver_drop(FrameReceiver rx);
+
+/// Take ownership over the given `FrameSender` and free its resources.
+void frame_sender_drop(FrameSender tx);
 
 /// Initialise the given frame stream configuration with default values.
 void frame_stream_config_default(FrameStreamConfig *conf);
@@ -359,7 +420,20 @@ uint32_t points_per_frame(const Frame *frame);
 /// Must be called in order to correctly clean up the raw stream.
 void raw_stream_drop(RawStream stream);
 
-uint32_t rust_test_func();
+/// Receive the most recent frame msg if there is one waiting.
+///
+/// All other pending frame messages will be dropped.
+///
+/// Returns `true` if a message was received, `false` if no message was received.
+bool recv_frame_msg(const FrameReceiver *frame_rx, FrameMsg *frame_msg);
+
+/// Send the given frame over the channel.
+///
+/// Takes ownership over the given `frame_msg`.
+///
+/// Returns `true` if the message sent successfully. Returns `false` if the channel has been closed
+/// or if the number of queued messages exceeds `QUEUE_LIMIT`.
+bool send_frame_msg(const FrameSender *frame_tx, FrameMsg frame_msg);
 
 /// Initialise the given raw stream configuration with default values.
 void stream_config_default(StreamConfig *conf);
