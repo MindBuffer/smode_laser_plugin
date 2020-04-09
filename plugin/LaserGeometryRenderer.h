@@ -40,7 +40,6 @@ namespace smode
         return;
 
       laserDevice->addPoints(points);
-      
     }
 
     // Element

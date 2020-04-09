@@ -46,7 +46,6 @@ namespace smode
 
     bool initializeFactory(Engine& engine, String& failureReason) override
     {
-      DBG("initializeFactory Start");
       float dac_timeout_secs = 1.5;
       smode::laser::api_new(&api);
       smode::laser::Result res = smode::laser::detect_dacs_async(&api, dac_timeout_secs, &dac_detector);
@@ -60,14 +59,11 @@ namespace smode
         return false;
       }
 
-      DBG("initializeFactory END");
-
       return true;
     }
 
     void configurationApplied() override
     {
-      DBG("configurationApplied");
     }
 
     void deinitializeFactory() override
@@ -98,25 +94,16 @@ namespace smode
 
     Device* createDevice(const DeviceIdentifier& identifier, GraphicsContext& graphics) const override
     {
-      DBG("createDevice Start");
-
       for (auto dac : detected_dacs) {
         String mac_string = macAddressToString(dac.kind.ether_dream.broadcast.mac_address);
-        DBG("mac_string");
 
         if (mac_string == identifier.getFriendlyName()) {
-          DBG("typedIdentifier");
-
-          //if (typedIdentifier) {
             LaserDevice* device = new LaserDevice(identifier);
             device->dac = dac;
             device->laser_api = &api;
-            DBG("SUCCESS create device");
             return device;
-          //}
         }
       }
-
       return nullptr;
     }
 
