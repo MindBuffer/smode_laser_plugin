@@ -12,8 +12,19 @@
 
 namespace smode
 {
+  struct CallbackData {
+    smode::laser::FrameReceiver frame_rx;
+    smode::laser::FrameMsg msg;
+  };
+
   void frameRenderCallback(void* data, smode::laser::Frame* frame) {
-    DBG("frameRenderCallback");
+    CallbackData* cb_data = (CallbackData*)data;
+    smode::laser::FrameMsg msg = cb_data->msg;
+    if (smode::laser::recv_frame_msg(&cb_data->frame_rx, &cb_data->msg)) {
+      smode::laser::frame_msg_drop(msg);
+      msg = cb_data->msg;
+    }
+    smode::laser::extend_frame_with_msg(frame, &cb_data->msg);
   }
 
   void processRawCallback(void* data, smode::laser::Buffer* buffer) {
@@ -24,7 +35,8 @@ namespace smode
   {
   public:
     LaserDevice(const DeviceIdentifier& identifier)
-      : ControlDevice(identifier), dacPointsPerSecond(10000), latency(166), targetFps(60), distancePerPoint(0.1), blankDelayPoints(10), radiansPerPoint(0.6)
+      : ControlDevice(identifier), dacPointsPerSecond(10000), latency(166), targetFps(60), distancePerPoint(0.1), blankDelayPoints(10), radiansPerPoint(0.6),
+      callback_data(std::make_shared<CallbackData>())
     {
       dacPointsPerSecond.setParent(this);
       latency.setParent(this);
@@ -37,8 +49,11 @@ namespace smode
 
     
     bool initializeDevice() override {
-      DBG("INIT CONTROLDEVICE");
       ControlDevice::initializeDevice();
+
+      // Prepare the callback data and frame msg queue.
+      smode::laser::frame_msg_new(&callback_data->msg);
+      smode::laser::frame_queue_new(&frame_tx, &callback_data->frame_rx);
 
       // Initialise the stream with default configuration.
       smode::laser::FrameStreamConfig config = {};
@@ -46,17 +61,16 @@ namespace smode
       config.stream_conf.detected_dac = &dac;
 
       // Data to be shared with the frame render callback.
-      // TODO
-      void* callback_data = nullptr;
-
-      DBG("SPAWNING DA STREAM");
+      // For now, just share the frame receiver.
+      CallbackData* cb_data_ptr = callback_data.get();
+      void* callback_data = cb_data_ptr;
 
       // Spawn the stream.
       smode::laser::Result res = smode::laser::new_frame_stream(
         laser_api,
         &frame_stream,
         &config,
-        &callback_data,
+        callback_data,
         frameRenderCallback,
         processRawCallback
       );
@@ -68,13 +82,16 @@ namespace smode
         return false;
       }
 
-      DBG("DID IT");
       return true;
     }
 
     void deinitializeDevice() override {
-      DBG("DE INIT! CUNT");
+      // Clean up the frame resources and ensure the thread is joined.
       smode::laser::frame_stream_drop(frame_stream);
+      // Now that the laser thread is stopped, we can clean up our channel and callback data.
+      smode::laser::frame_sender_drop(frame_tx);
+      smode::laser::frame_receiver_drop(callback_data->frame_rx);
+      smode::laser::frame_msg_drop(callback_data->msg);
       ControlDevice::deinitializeDevice();
     }
 
@@ -85,8 +102,27 @@ namespace smode
       uint32_t weight; // 0 for smooth line segments, > 0 for accenting individual points
     };
 
-    void addPoints(const std::vector<Point>& points) {
-      // TODO
+    void addPoints(const std::vector<Point>& smode_points) {
+      if (smode_points.empty()) {
+        return;
+      }
+      std::vector<smode::laser::Point> points;
+      for (auto p : smode_points) {
+        smode::laser::Point point = {};
+        point.position[0] = p.position.x;
+        point.position[1] = p.position.y;
+        point.color[0] = p.color.r;
+        point.color[1] = p.color.g;
+        point.color[2] = p.color.b;
+        point.weight = p.weight;
+        points.push_back(point);
+      }
+      smode::laser::FrameMsg msg;
+      smode::laser::frame_msg_new(&msg);
+      // TODO: Retrieve the type from somewhere the user can control.
+      smode::laser::SequenceType ty = smode::laser::SequenceType::Lines;
+      smode::laser::frame_msg_add_sequence(&msg, ty, &points[0], points.size());
+      smode::laser::send_frame_msg(&frame_tx, msg);
     }
 
     const PositiveInteger& getDacPointsPerSecond() const
@@ -155,6 +191,9 @@ namespace smode
     // The detected DAC associated with this Device instance.
     smode::laser::DetectedDac dac;
     smode::laser::FrameStream frame_stream;
+    smode::laser::FrameSender frame_tx;
+    // Shared with the laser callback.
+    std::shared_ptr<CallbackData> callback_data;
 
     OIL_OBJECT(LaserDevice);
 

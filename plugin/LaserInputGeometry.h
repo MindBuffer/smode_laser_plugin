@@ -51,7 +51,7 @@ namespace smode
           const size_t verticesWritten = getNumVerticeWritten(renderer.getGraphics());
           if (verticesWritten > verticesRequired || (isExactValue && verticesWritten != verticesRequired))
           {
-            //DBG(this->getClassName() + " fatal error : num lines registred : " + String(getNumLines()) + " num vertices required : " + String(verticesRequired) + " num vertices written : " + String(verticesWritten));
+            DBG(this->getClassName() + " fatal error : num lines registred : " + String(getNumLines()) + " num vertices required : " + String(verticesRequired) + " num vertices written : " + String(verticesWritten));
             jassertfalseOnce; // Your computation of numLines is incorrect please correct it following the spec in Geometry.h
           }
   #  endif
