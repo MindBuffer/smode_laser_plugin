@@ -35,18 +35,46 @@ namespace smode
   {
   public:
     LaserDevice(const DeviceIdentifier& identifier)
-      : ControlDevice(identifier), dacPointsPerSecond(10000), latency(166), targetFps(60), distancePerPoint(0.1), blankDelayPoints(10), radiansPerPoint(0.6),
+      : ControlDevice(identifier), dacPointsPerSecond(10000), latencyPoints(166), targetFps(60), blankDelayPoints(10), distancePerPoint(0.1), anglePerPoint(0.6),
       callback_data(std::make_shared<CallbackData>())
     {
       dacPointsPerSecond.setParent(this);
-      latency.setParent(this);
+      latencyPoints.setParent(this);
       targetFps.setParent(this);
       distancePerPoint.setParent(this);
       blankDelayPoints.setParent(this);
-      radiansPerPoint.setParent(this);
+      anglePerPoint.setParent(this);
     }
     LaserDevice() {}
 
+    // Object
+    bool hasVariableConstraints() const override
+      {return true;}
+
+    void variableChangedCallback(Object* variable, Object* changedObject) override
+    {
+      if (isInitialized() && isRenderingServiceCurrent()) {
+        if (variable == &dacPointsPerSecond) {
+          smode::laser::frame_stream_set_point_hz(&frame_stream, (uint32_t)dacPointsPerSecond);
+        }
+        else if (variable == &latencyPoints) {
+          smode::laser::frame_stream_set_latency_points(&frame_stream, (uint32_t)latencyPoints);
+        }
+        else if (variable == &targetFps) {
+          smode::laser::frame_stream_set_frame_hz(&frame_stream, (uint32_t)targetFps);
+        }
+        else if (variable == &distancePerPoint) {
+          smode::laser::frame_stream_set_distance_per_point(&frame_stream, (uint32_t)distancePerPoint);
+        }
+        else if (variable == &blankDelayPoints) {
+          smode::laser::frame_stream_set_blank_delay_points(&frame_stream, (uint32_t)blankDelayPoints);
+        }
+        else if (variable == &anglePerPoint) {
+          smode::laser::frame_stream_set_radians_per_point(&frame_stream, (float)anglePerPoint);
+        }
+      }
+      ControlDevice::variableChangedCallback(variable, changedObject);
+    }
     
     bool initializeDevice() override {
       ControlDevice::initializeDevice();
@@ -59,6 +87,12 @@ namespace smode
       smode::laser::FrameStreamConfig config = {};
       smode::laser::frame_stream_config_default(&config);
       config.stream_conf.detected_dac = &dac;
+      config.interpolation_conf.blank_delay_points = (uint32_t)blankDelayPoints;
+      config.interpolation_conf.distance_per_point = (uint32_t)distancePerPoint;
+      config.interpolation_conf.radians_per_point = (float)anglePerPoint;
+      config.frame_hz = (uint32_t)targetFps;
+      config.stream_conf.latency_points = (uint32_t)latencyPoints;
+      config.stream_conf.point_hz = (uint32_t)dacPointsPerSecond;
 
       // Data to be shared with the frame render callback.
       // For now, just share the frame receiver.
@@ -125,66 +159,6 @@ namespace smode
       smode::laser::send_frame_msg(&frame_tx, msg);
     }
 
-    const PositiveInteger& getDacPointsPerSecond() const
-    {
-      return dacPointsPerSecond;
-    }
-
-    PositiveInteger& getDacPointsPerSecond()
-    {
-      return dacPointsPerSecond;
-    }
-
-    const PositiveInteger& getLatency() const
-    {
-      return latency;
-    }
-
-    PositiveInteger& getLatency()
-    {
-      return latency;
-    }
-
-    const PositiveInteger& getTargetFps() const
-    {
-      return targetFps;
-    }
-
-    PositiveInteger& getTargetFps()
-    {
-      return targetFps;
-    }
-
-    const Real& getDistancePerPoint() const
-    {
-      return distancePerPoint;
-    }
-
-    Real& getDistancePerPoint()
-    {
-      return distancePerPoint;
-    }
-
-    const PositiveInteger& getBlankDelayPoints() const
-    {
-      return blankDelayPoints;
-    }
-
-    PositiveInteger& getBlankDelayPoints()
-    {
-      return blankDelayPoints;
-    }
-
-    const Real& getRadiansPerPoint() const
-    {
-      return radiansPerPoint;
-    }
-
-    Real& getRadiansPerPoint()
-    {
-      return radiansPerPoint;
-    }
-
     // A pointer to the laser API instance.
     // Is valid between `initializeFactory` and `deinitializeFactory`.
     smode::laser::Api* laser_api;
@@ -199,11 +173,11 @@ namespace smode
 
   private:
     PositiveInteger dacPointsPerSecond;
-    PositiveInteger latency;
+    PositiveInteger latencyPoints;
     PositiveInteger targetFps;
-    Real distancePerPoint;
+    Percentage distancePerPoint;
     PositiveInteger blankDelayPoints;
-    Real radiansPerPoint;
+    PositiveAngle anglePerPoint; // This is actually in radians but displayed to the user in degrees
   };
 
 

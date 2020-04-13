@@ -208,15 +208,21 @@ struct SocketAddr {
   unsigned short port;
 };
 
+/// An Ether Dream DAC that was detected on the network.
 struct DacEtherDream {
   DacBroadcast broadcast;
   SocketAddr source_addr;
 };
 
+/// A union for distinguishing between the kind of LASER DAC that was detected. Currently, only
+/// EtherDream is supported, however this will gain more variants as more protocols are added (e.g.
+/// AVB).
 union DetectedDacKind {
   DacEtherDream ether_dream;
 };
 
+/// Represents a DAC that has been detected on the network along with any information collected
+/// about the DAC in the detection process.
 struct DetectedDac {
   DetectedDacKind kind;
 };
@@ -273,9 +279,21 @@ struct FrameReceiver {
   FrameReceiverInner *inner;
 };
 
+/// A set of stream configuration parameters applied to the initialisation of both `Raw` and
+/// `Frame` streams.
 struct StreamConfig {
+  /// A valid pointer to a `DetectedDac` that should be targeted.
   const DetectedDac *detected_dac;
+  /// The rate at which the DAC should process points per second.
+  ///
+  /// This value should be no greater than the detected DAC's `max_point_hz`.
   unsigned int point_hz;
+  /// The maximum latency specified as a number of points.
+  ///
+  /// Each time the laser indicates its "fullness", the raw stream will request enough points
+  /// from the render function to fill the DAC buffer up to `latency_points`.
+  ///
+  /// This value should be no greaterthan the DAC's `buffer_capacity`.
   unsigned int latency_points;
 };
 
@@ -296,12 +314,31 @@ static const uint32_t InterpolationConfig_DEFAULT_BLANK_DELAY_POINTS = 10;
 /// The default radians per point of delay to reduce corner inertia.
 static const float InterpolationConfig_DEFAULT_RADIANS_PER_POINT = 0.6;
 
+/// A set of stream configuration parameters unique to `Frame` streams.
 struct FrameStreamConfig {
   StreamConfig stream_conf;
+  /// The rate at which the stream will attempt to present images via the DAC. This value is used
+  /// in combination with the DAC's `point_hz` in order to determine how many points should be
+  /// used to draw each frame. E.g.
+  ///
+  /// ```ignore
+  /// let points_per_frame = point_hz / frame_hz;
+  /// ```
+  ///
+  /// This is simply used as a minimum value. E.g. if some very simple geometry is submitted, this
+  /// allows the DAC to spend more time creating the path for the image. However, if complex geometry
+  /// is submitted that would require more than the ideal `points_per_frame`, the DAC may not be able
+  /// to achieve the desired `frame_hz` when drawing the path while also taking the
+  /// `distance_per_point` and `radians_per_point` into consideration.
   uint32_t frame_hz;
+  /// Configuration options for eulerian circuit interpolation.
   InterpolationConfig interpolation_conf;
 };
 
+/// A handle to a stream that requests frames of LASER data from the user.
+///
+/// Each "frame" has an optimisation pass applied that optimises the path for inertia, minimal
+/// blanking, point de-duplication and segment order.
 struct FrameStream {
   FrameStreamInner *inner;
 };
@@ -316,6 +353,8 @@ struct Buffer {
 /// Cast to `extern fn(*mut raw::c_void, *mut Buffer)` internally.
 using RawRenderCallback = void(*)(void*, Buffer*);
 
+/// A handle to a raw LASER stream that requests the exact number of points that the DAC is
+/// awaiting in each call to the user's callback.
 struct RawStream {
   RawStreamInner *inner;
 };
@@ -332,6 +371,9 @@ const char *api_last_error(const Api *api);
 void api_new(Api *api);
 
 /// Retrieve a list of the currently available DACs.
+///
+/// Calling this function should never block, and simply provide the list of DACs that have
+/// broadcast their availability within the last specified DAC timeout duration.
 void available_dacs(DetectDacsAsync *detect_dacs_async, DetectedDac **first_dac, unsigned int *len);
 
 /// Block the current thread until a new DAC is detected and return it.
@@ -365,8 +407,10 @@ void frame_add_lines(Frame *frame, const Point *points, uintptr_t len);
 /// previous point and the first point before appending this sequence.
 void frame_add_points(Frame *frame, const Point *points, uintptr_t len);
 
+/// Retrieve the current `frame_hz` at the time of rendering this `Frame`.
 uint32_t frame_hz(const Frame *frame);
 
+/// Retrieve the current `latency_points` at the time of rendering this `Frame`.
 uint32_t frame_latency_points(const Frame *frame);
 
 /// Add the given sequence to the frame message.
@@ -383,6 +427,7 @@ void frame_msg_drop(FrameMsg frame_msg);
 /// Create a new empty frame that we may begin to prepare.
 void frame_msg_new(FrameMsg *frame_msg);
 
+/// Retrieve the current `point_hz` at the time of rendering this `Frame`.
 uint32_t frame_point_hz(const Frame *frame);
 
 /// Create a new queue for safely passing prepared frames across threads.
@@ -400,7 +445,84 @@ void frame_stream_config_default(FrameStreamConfig *conf);
 /// Must be called in order to correctly clean up the frame stream.
 void frame_stream_drop(FrameStream stream);
 
+/// Update the `blank_delay_points` field of the interpolation configuration. This represents the
+/// number of points to insert at the end of a blank to account for light modulator delay.
+///
+/// The value will be updated on the laser thread prior to requesting the next frame.
+///
+/// Returns `true` on success or `false` if the communication channel was closed.
+bool frame_stream_set_blank_delay_points(const FrameStream *stream, uint32_t points);
+
+/// Update the `distance_per_point` field of the interpolation configuration used within the
+/// optimisation pass for frames. This represents the minimum distance the interpolator can travel
+/// along an edge before a new point is required.
+///
+/// The value will be updated on the laser thread prior to requesting the next frame.
+///
+/// Returns `true` on success or `false` if the communication channel was closed.
+bool frame_stream_set_distance_per_point(const FrameStream *stream, float distance_per_point);
+
+/// Update the rate at which the stream will attempt to present images via the DAC. This value is
+/// used in combination with the DAC's `point_hz` in order to determine how many points should be
+/// used to draw each frame. E.g.
+///
+/// ```ignore
+/// let points_per_frame = point_hz / frame_hz;
+/// ```
+///
+/// This is simply used as a minimum value. E.g. if some very simple geometry is submitted, this
+/// allows the DAC to spend more time creating the path for the image. However, if complex geometry
+/// is submitted that would require more than the ideal `points_per_frame`, the DAC may not be able
+/// to achieve the desired `frame_hz` when drawing the path while also taking the
+/// `distance_per_point` and `radians_per_point` into consideration.
+///
+/// The value will be updated on the laser thread prior to requesting the next frame.
+///
+/// Returns `true` on success or `false` if the communication channel was closed.
+bool frame_stream_set_frame_hz(const FrameStream *stream, uint32_t frame_hz);
+
+/// The maximum latency specified as a number of points.
+///
+/// Each time the laser indicates its "fullness", the raw stream will request enough points
+/// from the render function to fill the DAC buffer up to `latency_points`.
+///
+/// This value should be no greaterthan the DAC's `buffer_capacity`.
+///
+/// Returns `true` on success or `false` if the communication channel was closed.
+bool frame_stream_set_latency_points(const FrameStream *stream, uint32_t points);
+
+/// Update the rate at which the DAC should process points per second.
+///
+/// This value should be no greater than the detected DAC's `max_point_hz`.
+///
+/// By default this value is `stream::DEFAULT_POINT_HZ`.
+///
+/// Returns `true` on success or `false` if the communication channel was closed.
+bool frame_stream_set_point_hz(const FrameStream *stream, uint32_t point_hz);
+
+/// Update the `radians_per_point` field of the interpolation configuration. This represents the
+/// amount of delay to add based on the angle of the corner in radians.
+///
+/// The value will be updated on the laser thread prior to requesting the next frame.
+///
+/// Returns `true` on success or `false` if the communication channel was closed.
+bool frame_stream_set_radians_per_point(const FrameStream *stream, float radians_per_point);
+
 /// Spawn a new frame rendering stream.
+///
+/// The `frame_render_callback` is called each time the stream is ready for a new `Frame` of laser
+/// points. Each "frame" has an optimisation pass applied that optimises the path for inertia,
+/// minimal blanking, point de-duplication and segment order.
+///
+/// The `process_raw_callback` allows for optionally processing the raw points before submission to
+/// the DAC. This might be useful for:
+///
+/// - applying post-processing effects onto the optimised, interpolated points.
+/// - monitoring the raw points resulting from the optimisation and interpolation processes.
+/// - tuning brightness of colours based on safety zones.
+///
+/// The given function will get called right before submission of the optimised, interpolated
+/// buffer.
 Result new_frame_stream(Api *api,
                         FrameStream *stream,
                         const FrameStreamConfig *config,
@@ -409,16 +531,40 @@ Result new_frame_stream(Api *api,
                         RawRenderCallback process_raw_callback);
 
 /// Spawn a new frame rendering stream.
+///
+/// A raw LASER stream requests the exact number of points that the DAC is awaiting in each call to
+/// the user's `process_raw_callback`. Keep in mind that no optimisation passes are applied. When
+/// using a raw stream, this is the responsibility of the user.
 Result new_raw_stream(Api *api,
                       RawStream *stream,
                       const StreamConfig *config,
                       void *callback_data,
                       RawRenderCallback process_raw_callback);
 
+/// Retrieve the current ideal `points_per_frame` at the time of rendering this `Frame`.
 uint32_t points_per_frame(const Frame *frame);
 
 /// Must be called in order to correctly clean up the raw stream.
 void raw_stream_drop(RawStream stream);
+
+/// The maximum latency specified as a number of points.
+///
+/// Each time the laser indicates its "fullness", the raw stream will request enough points
+/// from the render function to fill the DAC buffer up to `latency_points`.
+///
+/// This value should be no greaterthan the DAC's `buffer_capacity`.
+///
+/// Returns `true` on success or `false` if the communication channel was closed.
+bool raw_stream_set_latency_points(const RawStream *stream, uint32_t points);
+
+/// Update the rate at which the DAC should process points per second.
+///
+/// This value should be no greater than the detected DAC's `max_point_hz`.
+///
+/// By default this value is `stream::DEFAULT_POINT_HZ`.
+///
+/// Returns `true` on success or `false` if the communication channel was closed.
+bool raw_stream_set_point_hz(const RawStream *stream, uint32_t point_hz);
 
 /// Receive the most recent frame msg if there is one waiting.
 ///
