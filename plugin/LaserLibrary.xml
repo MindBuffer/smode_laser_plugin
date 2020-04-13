@@ -17,8 +17,7 @@
       <attribute name ="minimum">1000</attribute>
       <attribute name ="maximum">100000</attribute>
     </variable>
-    <variable class="PositiveInteger" name="latency" default="166">
-      <attribute name ="friendlyName">"Latency Points"</attribute>
+    <variable class="PositiveInteger" name="latencyPoints" default="166">
       <attribute name ="minimum">10</attribute>
       <attribute name ="maximum">1500</attribute>
     </variable>
@@ -32,7 +31,7 @@
       <attribute name ="minimum">1</attribute>
       <attribute name ="maximum">32</attribute>
     </variable>
-    <variable class="PositiveAngle" name="degreesPerPoint" default="0.6"/>
+    <variable class="PositiveAngle" name="anglePerPoint" default="0.6"/>
   </class>
   
   <class name="LaserDeviceSelector" base="ControlDeviceSelector"/>

@@ -35,15 +35,15 @@ namespace smode
   {
   public:
     LaserDevice(const DeviceIdentifier& identifier)
-      : ControlDevice(identifier), dacPointsPerSecond(10000), latency(166), targetFps(60), blankDelayPoints(10), distancePerPoint(0.1), degreesPerPoint(0.6),
+      : ControlDevice(identifier), dacPointsPerSecond(10000), latencyPoints(166), targetFps(60), blankDelayPoints(10), distancePerPoint(0.1), anglePerPoint(0.6),
       callback_data(std::make_shared<CallbackData>())
     {
       dacPointsPerSecond.setParent(this);
-      latency.setParent(this);
+      latencyPoints.setParent(this);
       targetFps.setParent(this);
       distancePerPoint.setParent(this);
       blankDelayPoints.setParent(this);
-      degreesPerPoint.setParent(this);
+      anglePerPoint.setParent(this);
     }
     LaserDevice() {}
 
@@ -55,28 +55,22 @@ namespace smode
     {
       if (isInitialized() && isRenderingServiceCurrent()) {
         if (variable == &dacPointsPerSecond) {
-          int dpps = dacPointsPerSecond;
-          smode::laser::frame_stream_set_point_hz(&frame_stream, (uint32_t)dpps);
+          smode::laser::frame_stream_set_point_hz(&frame_stream, (uint32_t)dacPointsPerSecond);
         }
-        else if (variable == &latency) {
-          int points = latency;
-          smode::laser::frame_stream_set_latency_points(&frame_stream, (uint32_t)points);
+        else if (variable == &latencyPoints) {
+          smode::laser::frame_stream_set_latency_points(&frame_stream, (uint32_t)latencyPoints);
         }
         else if (variable == &targetFps) {
-          int hz = targetFps;
-          smode::laser::frame_stream_set_frame_hz(&frame_stream, (uint32_t)hz);
+          smode::laser::frame_stream_set_frame_hz(&frame_stream, (uint32_t)targetFps);
         }
         else if (variable == &distancePerPoint) {
-          int dpp = distancePerPoint;
-          smode::laser::frame_stream_set_distance_per_point(&frame_stream, (uint32_t)dpp);
+          smode::laser::frame_stream_set_distance_per_point(&frame_stream, (uint32_t)distancePerPoint);
         }
         else if (variable == &blankDelayPoints) {
-          int points = blankDelayPoints;
-          smode::laser::frame_stream_set_blank_delay_points(&frame_stream, (uint32_t)points);
+          smode::laser::frame_stream_set_blank_delay_points(&frame_stream, (uint32_t)blankDelayPoints);
         }
-        else if (variable == &degreesPerPoint) {
-          float radians = degreesPerPoint;
-          smode::laser::frame_stream_set_radians_per_point(&frame_stream, (float)radians);
+        else if (variable == &anglePerPoint) {
+          smode::laser::frame_stream_set_radians_per_point(&frame_stream, (float)anglePerPoint);
         }
       }
       ControlDevice::variableChangedCallback(variable, changedObject);
@@ -93,18 +87,12 @@ namespace smode
       smode::laser::FrameStreamConfig config = {};
       smode::laser::frame_stream_config_default(&config);
       config.stream_conf.detected_dac = &dac;
-      int bdp = blankDelayPoints;
-      config.interpolation_conf.blank_delay_points = (uint32_t)bdp;
-      int dpp = distancePerPoint;
-      config.interpolation_conf.distance_per_point = (uint32_t)dpp;
-      float radians = degreesPerPoint;
-      config.interpolation_conf.radians_per_point = (float)radians;
-      int hz = targetFps;
-      config.frame_hz = (uint32_t)hz;
-      int lp = latency;
-      config.stream_conf.latency_points = (uint32_t)lp;
-      int dpps = dacPointsPerSecond;
-      config.stream_conf.point_hz = (uint32_t)dpps;
+      config.interpolation_conf.blank_delay_points = (uint32_t)blankDelayPoints;
+      config.interpolation_conf.distance_per_point = (uint32_t)distancePerPoint;
+      config.interpolation_conf.radians_per_point = (float)anglePerPoint;
+      config.frame_hz = (uint32_t)targetFps;
+      config.stream_conf.latency_points = (uint32_t)latencyPoints;
+      config.stream_conf.point_hz = (uint32_t)dacPointsPerSecond;
 
       // Data to be shared with the frame render callback.
       // For now, just share the frame receiver.
@@ -185,11 +173,11 @@ namespace smode
 
   private:
     PositiveInteger dacPointsPerSecond;
-    PositiveInteger latency;
+    PositiveInteger latencyPoints;
     PositiveInteger targetFps;
     Percentage distancePerPoint;
     PositiveInteger blankDelayPoints;
-    PositiveAngle degreesPerPoint; // This is actually in radians but displayed to the user in degrees
+    PositiveAngle anglePerPoint; // This is actually in radians but displayed to the user in degrees
   };
 
 
