@@ -10,16 +10,16 @@
 #include "LaserLibrary.h"
 #include "LaserDeviceIdentifier.h"
 #include "LaserDevice.h"
-//#include "../smode_laser/smode_laser.h"
 
 namespace smode
 {
   String macAddressToString(uint8_t mac_address[6])
   {
-    // TODO: Should produce a nicer mac address string.
     String s;
-    for (int i = 0; i < 6; i++) {
-      s += String(mac_address[i]);
+    s += String::toHexString(mac_address[0]);
+    for (int i = 1; i < 6; i++) {
+      s += ":";
+      s += String::toHexString(mac_address[i]);
     }
     return s;
   }
