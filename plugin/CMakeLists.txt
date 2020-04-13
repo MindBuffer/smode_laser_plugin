@@ -29,6 +29,7 @@ target_link_libraries(Laser "userenv.lib")
 # target_link_libraries(Laser "msvcrt.lib")
 
 # Link to the static library built from our rust project.
-set(PLUGIN_LIB_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../smode_laser/target/debug")
-target_link_libraries(Laser "${PLUGIN_LIB_PATH}/smode_laser.lib")
+set(PLUGIN_DEBUG_LIB_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../smode_laser/target/debug")
+set(PLUGIN_RELEASE_LIB_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../smode_laser/target/release")
 
+target_link_libraries(Laser debug "${PLUGIN_DEBUG_LIB_PATH}/smode_laser.lib" optimized "${PLUGIN_RELEASE_LIB_PATH}/smode_laser.lib")
