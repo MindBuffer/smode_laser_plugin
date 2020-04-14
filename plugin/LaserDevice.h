@@ -12,23 +12,85 @@
 
 namespace smode
 {
+  class LaserDevice;
+
   struct CallbackData {
     laser::FrameReceiver frame_rx;
     laser::FrameMsg msg;
+    LaserDevice* laser_device;
   };
 
   void frameRenderCallback(void* data, laser::Frame* frame) {
     CallbackData* cb_data = (CallbackData*)data;
+    // Ensure the device status is in the success state.
+    if (cb_data->laser_device->getStatus().state != SuccessState::success) {
+        SuccessStatus status = SuccessStatus();
+        status.state = SuccessState::success;
+        cb_data->laser_device->setStatusFromOtherThread(status);
+    }
+    // Update our current frame data.
     laser::FrameMsg msg = cb_data->msg;
     if (laser::recv_frame_msg(&cb_data->frame_rx, &cb_data->msg)) {
       laser::frame_msg_drop(msg);
       msg = cb_data->msg;
     }
+    // Write the data to the frame.
     laser::extend_frame_with_msg(frame, &cb_data->msg);
   }
 
   void processRawCallback(void* data, laser::Buffer* buffer) {
     // Nothing to be done.
+  }
+
+  String streamErrorToString(const laser::StreamError* err) {
+      laser::RawString rs = laser::stream_error_message(err);
+      String message = String(laser::raw_string_ref(&rs));
+      laser::raw_string_drop(rs);
+      return message;
+  }
+
+  void streamErrorCallback(void* data, const laser::StreamError* err, laser::StreamErrorAction* action) {
+    // Update the status if the message would have changed.
+    CallbackData* cb_data = (CallbackData*)data;
+    SuccessStatus status = cb_data->laser_device->getStatus();
+    String msg = streamErrorToString(err);
+    if (status.message != msg) {
+        status.state = SuccessState::error;
+        statue.message = msg;
+        cb_data->laser_device->setStatusFromOtherThread(status);
+    }
+
+    // Handle the error.
+    switch (laser::stream_error_kind(err)) {
+      // If communication dropped out, re-attempt to connect to the TCP stream.
+      case laser::StreamErrorKind::EtherDreamFailedToPrepareStream:
+      case laser::StreamErrorKind::EtherDreamFailedToBeginStream:
+      case laser::StreamErrorKind::EtherDreamFailedToSubmitData:
+      case laser::StreamErrorKind::EtherDreamFailedToSubmitPointRate:
+        laser::stream_error_action_set_reattempt_connect(action);
+        break;
+
+      // Attempt re-connection 5 times before attempting to re-detect the DAC.
+      case laser::StreamErrorKind::EtherDreamFailedToConnectStream:
+        if (laser::stream_error_attempts(err) % 5 != 0) {
+          laser::stream_error_action_set_reattempt_connect(action);
+        } else {
+          float timeout_secs = 1.1;
+          laser::stream_error_action_set_redetect_dacs(action, timeout_secs);
+        }
+        break;
+
+      // If we failed to detect the DAC, try again.
+      // Note: If an ether dream DAC is broadcasting, it does so once per second.
+      case laser::StreamErrorKind::EtherDreamFailedToDetectDacs:
+        float timeout_secs = 1.1;
+        laser::stream_error_action_set_redetect_dacs(action, timeout_secs);
+        break;
+
+      // The default action is to close the thread.
+      default:
+        break;
+    }
   }
 
   class LaserDevice : public ControlDevice
@@ -98,6 +160,7 @@ namespace smode
       // Prepare the callback data and frame msg queue.
       laser::frame_msg_new(&callback_data->msg);
       laser::frame_queue_new(&frame_tx, &callback_data->frame_rx);
+      callback_data->laser_device = this;
 
       // Initialise the stream with default configuration.
       laser::FrameStreamConfig config = {};
@@ -122,7 +185,8 @@ namespace smode
         &config,
         callback_data,
         frameRenderCallback,
-        processRawCallback
+        processRawCallback,
+        streamErrorCallback
       );
 
       if (res != laser::Result::Success) {

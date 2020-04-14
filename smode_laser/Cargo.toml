@@ -16,4 +16,4 @@ name = "smode_laser"
 crate-type = ["rlib", "staticlib", "cdylib"]
 
 [dependencies]
-nannou_laser = { git = "https://github.com/nannou-org/nannou", branch = "master", features = ["ffi"] }
+nannou_laser = { git = "https://github.com/mitchmindtree/nannou", branch = "laser_error", features = ["ffi"] }
