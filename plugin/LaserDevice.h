@@ -34,8 +34,8 @@ namespace smode
   class LaserDevice : public ControlDevice
   {
   public:
-    LaserDevice(const DeviceIdentifier& identifier)
-      : ControlDevice(identifier), dacPointsPerSecond(10000), latencyPoints(166), targetFps(60), blankDelayPoints(10), distancePerPoint(0.1), anglePerPoint(0.6),
+    LaserDevice(const DeviceIdentifier& identifier, smode::laser::DetectedDac _dac)
+      : ControlDevice(identifier), dacPointsPerSecond(10000), latencyPoints(166), targetFps(60), blankDelayPoints(10), distancePerPoint(0.1), anglePerPoint(0.6), dac(_dac),
       callback_data(std::make_shared<CallbackData>())
     {
       dacPointsPerSecond.setParent(this);
@@ -73,6 +73,27 @@ namespace smode
           smode::laser::frame_stream_set_radians_per_point(&frame_stream, (float)anglePerPoint);
         }
       }
+
+      if (!isApplyingVariableConstraints()) {
+        if (variable == &dacPointsPerSecond) {
+          VariableConstraintsScope _(*this);
+          uint32_t runtimeMax = dac.kind.ether_dream.broadcast.max_point_rate;
+          uint32_t runtimeMin = 2000;
+          DBG("PPS runtime max = " + String(runtimeMax));
+          if ((uint32_t)dacPointsPerSecond < runtimeMin)
+            dacPointsPerSecond.set(runtimeMin);
+          if ((uint32_t)dacPointsPerSecond > runtimeMax)
+            dacPointsPerSecond.set(runtimeMax);
+        }
+        else if (variable == &latencyPoints) {
+          VariableConstraintsScope _(*this);
+          uint32_t runtimeMax = dac.kind.ether_dream.broadcast.buffer_capacity;
+          DBG("latency runtime max = " + String(runtimeMax));
+          if ((uint32_t)latencyPoints > runtimeMax)
+            latencyPoints.set(runtimeMax);
+        }
+      }
+
       ControlDevice::variableChangedCallback(variable, changedObject);
     }
     

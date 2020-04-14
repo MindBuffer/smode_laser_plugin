@@ -15,18 +15,20 @@
     <variable class="PositiveInteger" name="dacPointsPerSecond" default="10000">
       <attribute name ="friendlyName">"DAC Points Per Second"</attribute>
       <attribute name ="minimum">1000</attribute>
-      <attribute name ="maximum">100000</attribute>
+      <attribute name ="maximum">1000000</attribute>
     </variable>
     <variable class="PositiveInteger" name="latencyPoints" default="166">
       <attribute name ="minimum">10</attribute>
-      <attribute name ="maximum">1500</attribute>
+      <attribute name ="maximum">10000</attribute>
     </variable>
     <variable class="PositiveInteger" name="targetFps" default="60">
       <attribute name ="friendlyName">"Target FPS"</attribute>
       <attribute name ="minimum">1</attribute>
       <attribute name ="maximum">120</attribute>
     </variable>
-    <variable class="Percentage" name="distancePerPoint" default="0.1" minimum="0.01"/>
+    <variable class="Percentage" name="distancePerPoint" default="0.1">
+      <attribute name ="minimum">0.01</attribute>
+    </variable>
     <variable class="PositiveInteger" name="blankDelayPoints" default="10">
       <attribute name ="minimum">1</attribute>
       <attribute name ="maximum">32</attribute>

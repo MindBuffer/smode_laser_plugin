@@ -14,7 +14,6 @@ SET (LASER_PLUGIN_SOURCES
   LaserDeviceSelector.h
   LaserInputGeometry.h
   LaserGeometryRenderer.h
-  Laser.h
 )
 
 smode_add_plugin(Laser EDITOR "Laser example plugin" SOURCES ${LASER_PLUGIN_SOURCES})
