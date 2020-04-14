@@ -1,5 +1,5 @@
 language = "C++"
-namespaces = ["smode", "laser"]
+namespaces = ["laser"]
 [parse]
 parse_deps = true
 include = ["nannou_laser", "ether-dream"]

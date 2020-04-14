@@ -3,7 +3,6 @@
 #include <cstdlib>
 #include <new>
 
-namespace smode {
 namespace laser {
 
 /// For the blank ab: `[a, a.blanked(), b.blanked(), (0..delay).map(|_| b.blanked())]`.
@@ -587,4 +586,3 @@ void stream_config_default(StreamConfig *conf);
 } // extern "C"
 
 } // namespace laser
-} // namespace smode
