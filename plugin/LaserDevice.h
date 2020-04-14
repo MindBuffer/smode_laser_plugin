@@ -89,11 +89,11 @@ namespace smode
         }
       }
 
-      ControlDevice::variableChangedCallback(variable, changedObject);
+      BaseClass::variableChangedCallback(variable, changedObject);
     }
     
     bool initializeDevice() override {
-      ControlDevice::initializeDevice();
+      BaseClass::initializeDevice();
 
       // Prepare the callback data and frame msg queue.
       smode::laser::frame_msg_new(&callback_data->msg);
@@ -142,7 +142,7 @@ namespace smode
       smode::laser::frame_sender_drop(frame_tx);
       smode::laser::frame_receiver_drop(callback_data->frame_rx);
       smode::laser::frame_msg_drop(callback_data->msg);
-      ControlDevice::deinitializeDevice();
+      BaseClass::deinitializeDevice();
     }
 
     struct Point
@@ -188,6 +188,8 @@ namespace smode
     OIL_OBJECT(LaserDevice);
 
   private:
+    typedef ControlDevice BaseClass;
+
     PositiveInteger dacPointsPerSecond;
     PositiveInteger latencyPoints;
     PositiveInteger targetFps;
