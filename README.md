@@ -69,7 +69,7 @@ field like so:
 
 The default MAC address can be found [here][5].
 
-[1]: https://github.com/MindBuffer/smode_laser_plugin/tree/master/smode_laser_plugin
+[1]: https://github.com/MindBuffer/smode_laser_plugin/tree/master/smode_laser
 [2]: https://github.com/nannou-org/ether-dream
 [3]: https://github.com/nannou-org/ether-dream/tree/master/dac-emulator
 [4]: https://guide.nannou.cc/getting_started/platform-specific_setup.html
