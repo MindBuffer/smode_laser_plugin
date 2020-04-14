@@ -78,14 +78,12 @@ namespace smode
         if (variable == &dacPointsPerSecond) {
           VariableConstraintsScope _(*this);
           uint32_t runtimeMax = dac.kind.ether_dream.broadcast.max_point_rate;
-          DBG("PPS runtime max = " + String(runtimeMax));
           if ((uint32_t)dacPointsPerSecond > runtimeMax)
             dacPointsPerSecond.set(runtimeMax);
         }
         else if (variable == &latencyPoints) {
           VariableConstraintsScope _(*this);
           uint32_t runtimeMax = dac.kind.ether_dream.broadcast.buffer_capacity;
-          DBG("latency runtime max = " + String(runtimeMax));
           if ((uint32_t)latencyPoints > runtimeMax)
             latencyPoints.set(runtimeMax);
         }
