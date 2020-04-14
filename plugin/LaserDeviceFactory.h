@@ -98,8 +98,7 @@ namespace smode
         String mac_string = macAddressToString(dac.kind.ether_dream.broadcast.mac_address);
 
         if (mac_string == identifier.getFriendlyName()) {
-            LaserDevice* device = new LaserDevice(identifier);
-            device->dac = dac;
+            LaserDevice* device = new LaserDevice(identifier, dac);
             device->laser_api = &api;
             return device;
         }

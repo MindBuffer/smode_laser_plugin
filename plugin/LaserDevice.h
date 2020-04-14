@@ -34,8 +34,8 @@ namespace smode
   class LaserDevice : public ControlDevice
   {
   public:
-    LaserDevice(const DeviceIdentifier& identifier)
-      : ControlDevice(identifier), dacPointsPerSecond(10000), latencyPoints(166), targetFps(60), blankDelayPoints(10), distancePerPoint(0.1), anglePerPoint(0.6),
+    LaserDevice(const DeviceIdentifier& identifier, smode::laser::DetectedDac _dac)
+      : ControlDevice(identifier), dacPointsPerSecond(10000), latencyPoints(166), targetFps(60), blankDelayPoints(10), distancePerPoint(0.1), anglePerPoint(0.6), dac(_dac),
       callback_data(std::make_shared<CallbackData>())
     {
       dacPointsPerSecond.setParent(this);
@@ -73,11 +73,27 @@ namespace smode
           smode::laser::frame_stream_set_radians_per_point(&frame_stream, (float)anglePerPoint);
         }
       }
-      ControlDevice::variableChangedCallback(variable, changedObject);
+
+      if (!isApplyingVariableConstraints()) {
+        if (variable == &dacPointsPerSecond) {
+          VariableConstraintsScope _(*this);
+          uint32_t runtimeMax = dac.kind.ether_dream.broadcast.max_point_rate;
+          if ((uint32_t)dacPointsPerSecond > runtimeMax)
+            dacPointsPerSecond.set(runtimeMax);
+        }
+        else if (variable == &latencyPoints) {
+          VariableConstraintsScope _(*this);
+          uint32_t runtimeMax = dac.kind.ether_dream.broadcast.buffer_capacity;
+          if ((uint32_t)latencyPoints > runtimeMax)
+            latencyPoints.set(runtimeMax);
+        }
+      }
+
+      BaseClass::variableChangedCallback(variable, changedObject);
     }
     
     bool initializeDevice() override {
-      ControlDevice::initializeDevice();
+      BaseClass::initializeDevice();
 
       // Prepare the callback data and frame msg queue.
       smode::laser::frame_msg_new(&callback_data->msg);
@@ -126,7 +142,7 @@ namespace smode
       smode::laser::frame_sender_drop(frame_tx);
       smode::laser::frame_receiver_drop(callback_data->frame_rx);
       smode::laser::frame_msg_drop(callback_data->msg);
-      ControlDevice::deinitializeDevice();
+      BaseClass::deinitializeDevice();
     }
 
     struct Point
@@ -172,6 +188,8 @@ namespace smode
     OIL_OBJECT(LaserDevice);
 
   private:
+    typedef ControlDevice BaseClass;
+
     PositiveInteger dacPointsPerSecond;
     PositiveInteger latencyPoints;
     PositiveInteger targetFps;
