@@ -47,10 +47,10 @@ namespace smode
     bool initializeFactory(Engine& engine, String& failureReason) override
     {
       float dac_timeout_secs = 1.5;
-      smode::laser::api_new(&api);
-      smode::laser::Result res = smode::laser::detect_dacs_async(&api, dac_timeout_secs, &dac_detector);
-      if (res != smode::laser::Result::Success) {
-        const char* err = smode::laser::api_last_error(&api);
+      laser::api_new(&api);
+      laser::Result res = laser::detect_dacs_async(&api, dac_timeout_secs, &dac_detector);
+      if (res != laser::Result::Success) {
+        const char* err = laser::api_last_error(&api);
         failureReason = "Failed to spawn DAC detection thread: " + String(err);
         return false;
       }
@@ -68,17 +68,17 @@ namespace smode
 
     void deinitializeFactory() override
     {
-      smode::laser::detect_dacs_async_drop(dac_detector);
-      smode::laser::api_drop(api);
+      laser::detect_dacs_async_drop(dac_detector);
+      laser::api_drop(api);
       BaseClass::deinitializeFactory();
     }
 
     bool enumerateDevices(Engine& engine, std::vector<DeviceIdentifier* >& res, String& failureReason) override
     {
       // Collect the `DetectedDacs` from the asynchronous detector.
-      smode::laser::DetectedDac* dacs = nullptr;
+      laser::DetectedDac* dacs = nullptr;
       unsigned int dac_count = 0;
-      smode::laser::available_dacs(&dac_detector, &dacs, &dac_count);
+      laser::available_dacs(&dac_detector, &dacs, &dac_count);
       detected_dacs.clear();
       if (dac_count > 0) {
         detected_dacs.assign(dacs, dacs + dac_count);
@@ -109,9 +109,9 @@ namespace smode
     OIL_OBJECT(LaserDeviceFactory);
 
   private:
-    mutable smode::laser::Api api;
-    smode::laser::DetectDacsAsync dac_detector;
-    std::vector<smode::laser::DetectedDac> detected_dacs;
+    mutable laser::Api api;
+    laser::DetectDacsAsync dac_detector;
+    std::vector<laser::DetectedDac> detected_dacs;
     typedef DeviceFactory BaseClass;
   };
 }; /* namespace smode */

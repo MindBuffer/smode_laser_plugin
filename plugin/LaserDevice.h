@@ -13,28 +13,28 @@
 namespace smode
 {
   struct CallbackData {
-    smode::laser::FrameReceiver frame_rx;
-    smode::laser::FrameMsg msg;
+    laser::FrameReceiver frame_rx;
+    laser::FrameMsg msg;
   };
 
-  void frameRenderCallback(void* data, smode::laser::Frame* frame) {
+  void frameRenderCallback(void* data, laser::Frame* frame) {
     CallbackData* cb_data = (CallbackData*)data;
-    smode::laser::FrameMsg msg = cb_data->msg;
-    if (smode::laser::recv_frame_msg(&cb_data->frame_rx, &cb_data->msg)) {
-      smode::laser::frame_msg_drop(msg);
+    laser::FrameMsg msg = cb_data->msg;
+    if (laser::recv_frame_msg(&cb_data->frame_rx, &cb_data->msg)) {
+      laser::frame_msg_drop(msg);
       msg = cb_data->msg;
     }
-    smode::laser::extend_frame_with_msg(frame, &cb_data->msg);
+    laser::extend_frame_with_msg(frame, &cb_data->msg);
   }
 
-  void processRawCallback(void* data, smode::laser::Buffer* buffer) {
+  void processRawCallback(void* data, laser::Buffer* buffer) {
     // Nothing to be done.
   }
 
   class LaserDevice : public ControlDevice
   {
   public:
-    LaserDevice(const DeviceIdentifier& identifier, smode::laser::DetectedDac _dac)
+    LaserDevice(const DeviceIdentifier& identifier, laser::DetectedDac _dac)
       : ControlDevice(identifier), dacPointsPerSecond(10000), latencyPoints(166), targetFps(60), blankDelayPoints(10), distancePerPoint(0.1), anglePerPoint(0.6), dac(_dac),
       callback_data(std::make_shared<CallbackData>())
     {
@@ -55,22 +55,22 @@ namespace smode
     {
       if (isInitialized() && isRenderingServiceCurrent()) {
         if (variable == &dacPointsPerSecond) {
-          smode::laser::frame_stream_set_point_hz(&frame_stream, (uint32_t)dacPointsPerSecond);
+          laser::frame_stream_set_point_hz(&frame_stream, (uint32_t)dacPointsPerSecond);
         }
         else if (variable == &latencyPoints) {
-          smode::laser::frame_stream_set_latency_points(&frame_stream, (uint32_t)latencyPoints);
+          laser::frame_stream_set_latency_points(&frame_stream, (uint32_t)latencyPoints);
         }
         else if (variable == &targetFps) {
-          smode::laser::frame_stream_set_frame_hz(&frame_stream, (uint32_t)targetFps);
+          laser::frame_stream_set_frame_hz(&frame_stream, (uint32_t)targetFps);
         }
         else if (variable == &distancePerPoint) {
-          smode::laser::frame_stream_set_distance_per_point(&frame_stream, (uint32_t)distancePerPoint);
+          laser::frame_stream_set_distance_per_point(&frame_stream, (uint32_t)distancePerPoint);
         }
         else if (variable == &blankDelayPoints) {
-          smode::laser::frame_stream_set_blank_delay_points(&frame_stream, (uint32_t)blankDelayPoints);
+          laser::frame_stream_set_blank_delay_points(&frame_stream, (uint32_t)blankDelayPoints);
         }
         else if (variable == &anglePerPoint) {
-          smode::laser::frame_stream_set_radians_per_point(&frame_stream, (float)anglePerPoint);
+          laser::frame_stream_set_radians_per_point(&frame_stream, (float)anglePerPoint);
         }
       }
 
@@ -96,12 +96,12 @@ namespace smode
       BaseClass::initializeDevice();
 
       // Prepare the callback data and frame msg queue.
-      smode::laser::frame_msg_new(&callback_data->msg);
-      smode::laser::frame_queue_new(&frame_tx, &callback_data->frame_rx);
+      laser::frame_msg_new(&callback_data->msg);
+      laser::frame_queue_new(&frame_tx, &callback_data->frame_rx);
 
       // Initialise the stream with default configuration.
-      smode::laser::FrameStreamConfig config = {};
-      smode::laser::frame_stream_config_default(&config);
+      laser::FrameStreamConfig config = {};
+      laser::frame_stream_config_default(&config);
       config.stream_conf.detected_dac = &dac;
       config.interpolation_conf.blank_delay_points = (uint32_t)blankDelayPoints;
       config.interpolation_conf.distance_per_point = (uint32_t)distancePerPoint;
@@ -116,7 +116,7 @@ namespace smode
       void* callback_data = cb_data_ptr;
 
       // Spawn the stream.
-      smode::laser::Result res = smode::laser::new_frame_stream(
+      laser::Result res = laser::new_frame_stream(
         laser_api,
         &frame_stream,
         &config,
@@ -125,8 +125,8 @@ namespace smode
         processRawCallback
       );
 
-      if (res != smode::laser::Result::Success) {
-        const char* err = smode::laser::api_last_error(laser_api);
+      if (res != laser::Result::Success) {
+        const char* err = laser::api_last_error(laser_api);
         String failureReason = "Failed to spawn laser frame stream: " + String(err);
         DBG(failureReason);
         return false;
@@ -137,11 +137,11 @@ namespace smode
 
     void deinitializeDevice() override {
       // Clean up the frame resources and ensure the thread is joined.
-      smode::laser::frame_stream_drop(frame_stream);
+      laser::frame_stream_drop(frame_stream);
       // Now that the laser thread is stopped, we can clean up our channel and callback data.
-      smode::laser::frame_sender_drop(frame_tx);
-      smode::laser::frame_receiver_drop(callback_data->frame_rx);
-      smode::laser::frame_msg_drop(callback_data->msg);
+      laser::frame_sender_drop(frame_tx);
+      laser::frame_receiver_drop(callback_data->frame_rx);
+      laser::frame_msg_drop(callback_data->msg);
       BaseClass::deinitializeDevice();
     }
 
@@ -156,9 +156,9 @@ namespace smode
       if (smode_points.empty()) {
         return;
       }
-      std::vector<smode::laser::Point> points;
+      std::vector<laser::Point> points;
       for (auto p : smode_points) {
-        smode::laser::Point point = {};
+        laser::Point point = {};
         point.position[0] = p.position.x;
         point.position[1] = p.position.y;
         point.color[0] = p.color.r;
@@ -167,21 +167,21 @@ namespace smode
         point.weight = p.weight;
         points.push_back(point);
       }
-      smode::laser::FrameMsg msg;
-      smode::laser::frame_msg_new(&msg);
+      laser::FrameMsg msg;
+      laser::frame_msg_new(&msg);
       // TODO: Retrieve the type from somewhere the user can control.
-      smode::laser::SequenceType ty = smode::laser::SequenceType::Lines;
-      smode::laser::frame_msg_add_sequence(&msg, ty, &points[0], points.size());
-      smode::laser::send_frame_msg(&frame_tx, msg);
+      laser::SequenceType ty = laser::SequenceType::Lines;
+      laser::frame_msg_add_sequence(&msg, ty, &points[0], points.size());
+      laser::send_frame_msg(&frame_tx, msg);
     }
 
     // A pointer to the laser API instance.
     // Is valid between `initializeFactory` and `deinitializeFactory`.
-    smode::laser::Api* laser_api;
+    laser::Api* laser_api;
     // The detected DAC associated with this Device instance.
-    smode::laser::DetectedDac dac;
-    smode::laser::FrameStream frame_stream;
-    smode::laser::FrameSender frame_tx;
+    laser::DetectedDac dac;
+    laser::FrameStream frame_stream;
+    laser::FrameSender frame_tx;
     // Shared with the laser callback.
     std::shared_ptr<CallbackData> callback_data;
 
