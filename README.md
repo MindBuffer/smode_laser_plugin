@@ -7,11 +7,20 @@ Smode plugin for sending streams to LASER projectors.
 1. Build a static library and C header from the Rust library. See the Rust
    `smode_laser` library README.md [here][1] for more details on how to achieve
    this.
-2. Build the plugin project file using the batch script.
-3. Build the plugin itself using the generated visual studio solution.
-4. Install the plugin within the plugins directory of your Smode SDK.
-
-*TODO: Let Josh update the steps above with more details.*
+2. Build the plugin project file using the batch script. There are 3 included 
+   .bat files inside the plugin/ folder. Double click on the .bat file that 
+   matches the version of Visual Studio you have installed on your system. 
+   This will create a build/ folder which contains a visual studio solution. 
+3. Build the plugin itself using the generated visual studio solution. To do so, 
+   navigate to build/Visual Studio xx/ and open the Laser.sln file. Next, in the 
+   Solution Configuration drop down menu, select to build in either Debug or Release 
+   mode. Finally, right click on the SMODE PLUGIN Laser in the Solution Explorer 
+   and click Build.
+4. Install the plugin within the plugins directory of your Smode SDK. There will
+   be either a new folder call Debug or Release created that contains the plugin.
+   For debug, copy the file Laser-debug.dll ... For release, copy the file
+   Laser.dll. Navigate to the SmodeSDK folder and paste the .dll file within the
+   plugins/ folder. 
 
 ## The Ether Dream DAC Emulator
 
