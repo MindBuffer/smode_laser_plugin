@@ -216,25 +216,20 @@ namespace smode
     };
 
     void addPoints(const std::vector<Point>& smode_points) {
-      if (smode_points.empty() || getStatus().isError()) {
-        return;
-      }
-      std::vector<laser::Point> points;
-      for (auto p : smode_points) {
-        laser::Point point = {};
-        point.position[0] = p.position.x;
-        point.position[1] = p.position.y;
-        point.color[0] = p.color.r;
-        point.color[1] = p.color.g;
-        point.color[2] = p.color.b;
-        point.weight = p.weight;
-        points.push_back(point);
-      }
+      // We always want to send a msg, even if its empty.
+      // This is because the render callback always emits the last frame received.
       laser::FrameMsg msg;
       laser::frame_msg_new(&msg);
-      // TODO: Retrieve the type from somewhere the user can control.
-      laser::SequenceType ty = laser::SequenceType::Lines;
-      laser::frame_msg_add_sequence(&msg, ty, &points[0], points.size());
+      // Only write the points if we're not muted, we're not in an error state and we actually have some.
+      if (!smode_points.empty() && !mute && !getStatus().isError()) {
+        std::vector<laser::Point> points;
+        // Layout *must* match or we will get very strange behaviour.
+        jassert(sizeof(Point) == sizeof(laser::Point));
+        points.resize(smode_points.size());
+        memcpy(&points[0], &smode_points[0], smode_points.size() * sizeof(laser::Point));
+        laser::SequenceType ty = laser::SequenceType::Lines;
+        laser::frame_msg_add_sequence(&msg, ty, &points[0], points.size());
+      }
       laser::send_frame_msg(&frame_tx, msg);
     }
 
