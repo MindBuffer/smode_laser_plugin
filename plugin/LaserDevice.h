@@ -112,7 +112,7 @@ namespace smode
       {return true;}
 
     void variableChangedCallback(Object* variable, Object* changedObject) override
-    {
+    {      
       if (isInitialized() && isRenderingServiceCurrent()) {
         if (variable == &dacPointsPerSecond) {
           laser::frame_stream_set_point_hz(&frame_stream, (uint32_t)dacPointsPerSecond);
@@ -215,7 +215,8 @@ namespace smode
       uint32_t weight; // 0 for smooth line segments, > 0 for accenting individual points
     };
 
-    void addPoints(const std::vector<Point>& smode_points) {
+    // Creates a new `Frame` from the given points and makes it available to the render callback.
+    void updateFrame(const std::vector<Point>& smode_points) {
       // We always want to send a msg, even if its empty.
       // This is because the render callback always emits the last frame received.
       laser::FrameMsg msg;
