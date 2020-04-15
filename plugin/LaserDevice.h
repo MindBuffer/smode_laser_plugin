@@ -222,13 +222,11 @@ namespace smode
       laser::frame_msg_new(&msg);
       // Only write the points if we're not muted, we're not in an error state and we actually have some.
       if (!smode_points.empty() && !mute && !getStatus().isError()) {
-        std::vector<laser::Point> points;
         // Layout *must* match or we will get very strange behaviour.
         jassert(sizeof(Point) == sizeof(laser::Point));
-        points.resize(smode_points.size());
-        memcpy(&points[0], &smode_points[0], smode_points.size() * sizeof(laser::Point));
+        const laser::Point* points = reinterpret_cast<const laser::Point*>(&smode_points[0]);
         laser::SequenceType ty = laser::SequenceType::Lines;
-        laser::frame_msg_add_sequence(&msg, ty, &points[0], points.size());
+        laser::frame_msg_add_sequence(&msg, ty, points, smode_points.size());
       }
       laser::send_frame_msg(&frame_tx, msg);
     }
