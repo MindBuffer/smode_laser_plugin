@@ -318,6 +318,10 @@ struct StreamConfig {
   ///
   /// This value should be no greaterthan the DAC's `buffer_capacity`.
   unsigned int latency_points;
+  /// The timeout duration of the stream in seconds.
+  ///
+  /// A negative value indicates that the stream should never timeout. This is the default case.
+  float tcp_timeout_secs;
 };
 
 /// Configuration options for eulerian circuit interpolation.

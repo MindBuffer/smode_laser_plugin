@@ -12,20 +12,18 @@
 
 namespace smode
 {
-  class LaserDevice;
-
   struct CallbackData {
     laser::FrameReceiver frame_rx;
     laser::FrameMsg msg;
-    LaserDevice* laser_device;
+    Device* laser_device;
   };
 
   void frameRenderCallback(void* data, laser::Frame* frame) {
     CallbackData* cb_data = (CallbackData*)data;
     // Ensure the device status is in the success state.
-    if (cb_data->laser_device->getStatus().state != SuccessState::success) {
+    if (cb_data->laser_device->getStatus().getState() != SuccessState::success) {
         SuccessStatus status = SuccessStatus();
-        status.state = SuccessState::success;
+        status.setSuccess();
         cb_data->laser_device->setStatusFromOtherThread(status);
     }
     // Update our current frame data.
@@ -54,9 +52,8 @@ namespace smode
     CallbackData* cb_data = (CallbackData*)data;
     SuccessStatus status = cb_data->laser_device->getStatus();
     String msg = streamErrorToString(err);
-    if (status.message != msg) {
-        status.state = SuccessState::error;
-        statue.message = msg;
+    if (status.getMessage() != msg) {
+        status.setError(msg);
         cb_data->laser_device->setStatusFromOtherThread(status);
     }
 
@@ -82,10 +79,11 @@ namespace smode
 
       // If we failed to detect the DAC, try again.
       // Note: If an ether dream DAC is broadcasting, it does so once per second.
-      case laser::StreamErrorKind::EtherDreamFailedToDetectDacs:
+      case laser::StreamErrorKind::EtherDreamFailedToDetectDacs: {
         float timeout_secs = 1.1;
         laser::stream_error_action_set_redetect_dacs(action, timeout_secs);
         break;
+      }
 
       // The default action is to close the thread.
       default:
@@ -165,6 +163,7 @@ namespace smode
       // Initialise the stream with default configuration.
       laser::FrameStreamConfig config = {};
       laser::frame_stream_config_default(&config);
+      config.stream_conf.tcp_timeout_secs = 1.2;
       config.stream_conf.detected_dac = &dac;
       config.interpolation_conf.blank_delay_points = (uint32_t)blankDelayPoints;
       config.interpolation_conf.distance_per_point = (uint32_t)distancePerPoint;
@@ -217,7 +216,7 @@ namespace smode
     };
 
     void addPoints(const std::vector<Point>& smode_points) {
-      if (smode_points.empty()) {
+      if (smode_points.empty() || getStatus().isError()) {
         return;
       }
       std::vector<laser::Point> points;
