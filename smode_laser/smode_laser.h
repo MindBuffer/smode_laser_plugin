@@ -36,12 +36,24 @@ enum class Result {
   DetectDacFailed,
   BuildStreamFailed,
   DetectDacsAsyncFailed,
+  CloseStreamFailed,
+  NullPointer,
 };
 
 /// Indicator for distinguishing between whether a sequence is of points or lines.
 enum class SequenceType {
   Points,
   Lines,
+};
+
+enum class StreamErrorKind {
+  EtherDreamFailedToDetectDacs,
+  EtherDreamFailedToConnectStream,
+  EtherDreamFailedToPrepareStream,
+  EtherDreamFailedToBeginStream,
+  EtherDreamFailedToSubmitData,
+  EtherDreamFailedToSubmitPointRate,
+  EtherDreamFailedToStopStream,
 };
 
 struct ApiInner;
@@ -61,6 +73,10 @@ struct FrameSenderInner;
 struct FrameStreamInner;
 
 struct RawStreamInner;
+
+struct StreamErrorActionInner;
+
+struct StreamErrorInner;
 
 /// Allows for detecting and enumerating laser DACs on a network and establishing new streams of
 /// communication with them.
@@ -278,6 +294,14 @@ struct FrameReceiver {
   FrameReceiverInner *inner;
 };
 
+/// A handle to a stream that requests frames of LASER data from the user.
+///
+/// Each "frame" has an optimisation pass applied that optimises the path for inertia, minimal
+/// blanking, point de-duplication and segment order.
+struct FrameStream {
+  FrameStreamInner *inner;
+};
+
 /// A set of stream configuration parameters applied to the initialisation of both `Raw` and
 /// `Frame` streams.
 struct StreamConfig {
@@ -294,6 +318,10 @@ struct StreamConfig {
   ///
   /// This value should be no greaterthan the DAC's `buffer_capacity`.
   unsigned int latency_points;
+  /// The timeout duration of the stream in seconds.
+  ///
+  /// A negative value indicates that the stream should never timeout. This is the default case.
+  float tcp_timeout_secs;
 };
 
 /// Configuration options for eulerian circuit interpolation.
@@ -334,28 +362,33 @@ struct FrameStreamConfig {
   InterpolationConfig interpolation_conf;
 };
 
-/// A handle to a stream that requests frames of LASER data from the user.
-///
-/// Each "frame" has an optimisation pass applied that optimises the path for inertia, minimal
-/// blanking, point de-duplication and segment order.
-struct FrameStream {
-  FrameStreamInner *inner;
-};
-
-/// Cast to `extern fn(*mut raw::c_void, *mut Frame)` internally.
 using FrameRenderCallback = void(*)(void*, Frame*);
 
 struct Buffer {
   BufferInner *inner;
 };
 
-/// Cast to `extern fn(*mut raw::c_void, *mut Buffer)` internally.
 using RawRenderCallback = void(*)(void*, Buffer*);
+
+struct StreamError {
+  const StreamErrorInner *inner;
+};
+
+struct StreamErrorAction {
+  StreamErrorActionInner *inner;
+};
+
+using StreamErrorCallback = void(*)(void*, const StreamError*, StreamErrorAction*);
 
 /// A handle to a raw LASER stream that requests the exact number of points that the DAC is
 /// awaiting in each call to the user's callback.
 struct RawStream {
   RawStreamInner *inner;
+};
+
+/// An owned instance of a raw C string.
+struct RawString {
+  char *inner;
 };
 
 extern "C" {
@@ -438,11 +471,28 @@ void frame_receiver_drop(FrameReceiver rx);
 /// Take ownership over the given `FrameSender` and free its resources.
 void frame_sender_drop(FrameSender tx);
 
+/// Close the TCP communication thread and wait for the thread to join.
+///
+/// This consumes and drops the `Stream`, returning the result produced by joining the thread.
+///
+/// This method will block until the associated thread has been joined.
+Result frame_stream_close(Api *api, FrameStream stream);
+
 /// Initialise the given frame stream configuration with default values.
 void frame_stream_config_default(FrameStreamConfig *conf);
 
 /// Must be called in order to correctly clean up the frame stream.
 void frame_stream_drop(FrameStream stream);
+
+/// Returns whether or not the communication thread has closed.
+///
+/// A stream may be closed if an error has occurred and the stream error callback indicated to
+/// close the thread. A stream might also be closed if another `close` was called on another handle
+/// to the stream.
+///
+/// In this case, the `Stream` should be closed or dropped and a new one should be created to
+/// replace it.
+bool frame_stream_is_closed(const FrameStream *stream);
 
 /// Update the `blank_delay_points` field of the interpolation configuration. This represents the
 /// number of points to insert at the end of a blank to account for light modulator delay.
@@ -527,7 +577,8 @@ Result new_frame_stream(Api *api,
                         const FrameStreamConfig *config,
                         void *callback_data,
                         FrameRenderCallback frame_render_callback,
-                        RawRenderCallback process_raw_callback);
+                        RawRenderCallback process_raw_callback,
+                        StreamErrorCallback stream_error_callback);
 
 /// Spawn a new frame rendering stream.
 ///
@@ -538,13 +589,31 @@ Result new_raw_stream(Api *api,
                       RawStream *stream,
                       const StreamConfig *config,
                       void *callback_data,
-                      RawRenderCallback process_raw_callback);
+                      RawRenderCallback process_raw_callback,
+                      StreamErrorCallback stream_error_callback);
 
 /// Retrieve the current ideal `points_per_frame` at the time of rendering this `Frame`.
 uint32_t points_per_frame(const Frame *frame);
 
+/// Close the TCP communication thread and wait for the thread to join.
+///
+/// This consumes and drops the `Stream`, returning the result produced by joining the thread.
+///
+/// This method will block until the associated thread has been joined.
+Result raw_stream_close(Api *api, RawStream stream);
+
 /// Must be called in order to correctly clean up the raw stream.
 void raw_stream_drop(RawStream stream);
+
+/// Returns whether or not the communication thread has closed.
+///
+/// A stream may be closed if an error has occurred and the stream error callback indicated to
+/// close the thread. A stream might also be closed if another `close` was called on another handle
+/// to the stream.
+///
+/// In this case, the `Stream` should be closed or dropped and a new one should be created to
+/// replace it.
+bool raw_stream_is_closed(const RawStream *stream);
 
 /// The maximum latency specified as a number of points.
 ///
@@ -565,6 +634,12 @@ bool raw_stream_set_latency_points(const RawStream *stream, uint32_t points);
 /// Returns `true` on success or `false` if the communication channel was closed.
 bool raw_stream_set_point_hz(const RawStream *stream, uint32_t point_hz);
 
+/// Must be called in order to correctly clean up a raw string.
+void raw_string_drop(RawString msg);
+
+/// Returns the pointer to the beginning of the C string for reading.
+const char *raw_string_ref(const RawString *msg);
+
 /// Receive the most recent frame msg if there is one waiting.
 ///
 /// All other pending frame messages will be dropped.
@@ -582,6 +657,40 @@ bool send_frame_msg(const FrameSender *frame_tx, FrameMsg frame_msg);
 
 /// Initialise the given raw stream configuration with default values.
 void stream_config_default(StreamConfig *conf);
+
+/// Set the error action to close the TCP communication thread.
+void stream_error_action_set_close_thread(StreamErrorAction *action);
+
+/// Set the error action to reattempt the TCP stream connection.
+///
+/// This action attempts to reconnect to the specified DAC in the case that one was provided, or
+/// any DAC in the case that `None` was provided.
+void stream_error_action_set_reattempt_connect(StreamErrorAction *action);
+
+/// Set the error action to redetect the DAC.
+///
+/// This action attempts to re-detect the same DAC in the case that one was specified, or any DAC in the
+/// case that `None` was provided.
+///
+/// This can be useful in the case where the DAC has dropped from the network and may have
+/// re-appeared broadcasting from a different IP address.
+void stream_error_action_set_redetect_dacs(StreamErrorAction *action,
+                                           float timeout_secs);
+
+/// Retrieve the number of attempts from the stream error.
+///
+/// If the error is `EtherDreamFailedToConnectStream`, this refers to the consecutive number of
+/// failed attempts to establish a TCP connection with the DAC.
+///
+/// If the error is `EtherDreamFailedToDetectDac`, this refers to the consecutive number of failed
+/// attempts to detect the requested DAC.
+uint32_t stream_error_attempts(const StreamError *err);
+
+/// Retrieve the kind of the stream error.
+StreamErrorKind stream_error_kind(const StreamError *err);
+
+/// Allocate a new C string containing the error message.
+RawString stream_error_message(const StreamError *err);
 
 } // extern "C"
 

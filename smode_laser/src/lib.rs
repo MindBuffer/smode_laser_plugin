@@ -107,10 +107,12 @@ pub unsafe extern "C" fn frame_msg_add_sequence(
 #[no_mangle]
 pub unsafe extern "C" fn send_frame_msg(frame_tx: *const FrameSender, frame_msg: FrameMsg) -> bool {
     let frame_tx: &FrameSender = &*frame_tx;
-    let res = (*frame_tx.inner).tx.send(frame_msg);
+
+    let res = (*frame_tx.inner).tx.try_send(frame_msg);
     match res {
         Ok(_) => true,
-        Err(mpsc::SendError(frame_msg)) => {
+        Err(mpsc::TrySendError::Full(frame_msg))
+        | Err(mpsc::TrySendError::Disconnected(frame_msg)) => {
             frame_msg_drop(frame_msg);
             false
         }
