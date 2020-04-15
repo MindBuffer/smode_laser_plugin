@@ -11,18 +11,18 @@
 
 namespace smode
 {
-  class LaserDeviceSelector : public TypedDeviceSelector<LaserDevice>
+class LaserDeviceSelector : public TypedDeviceSelector<LaserDevice>
+{
+public:
+  LaserDeviceSelector() {}
+
+  bool acceptDeviceClass(Class* deviceClass) const override
   {
-  public:
-    LaserDeviceSelector() {}
+    return deviceClass->inheritsFrom(oil::getClass("LaserDevice"));
+  }
 
-    bool acceptDeviceClass(Class* deviceClass) const override
-    {
-      return deviceClass->inheritsFrom(oil::getClass("LaserDevice"));
-    }
-
-    OIL_ABSTRACT_OBJECT(LaserDeviceSelector);
-  };
+  OIL_ABSTRACT_OBJECT(LaserDeviceSelector);
+};
 
 }; /* namespace smode */
 

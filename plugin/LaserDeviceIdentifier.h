@@ -11,16 +11,16 @@
 
 namespace smode
 {
-  class LaserDeviceIdentifier : public StringDeviceIdentifier
-  {
-  public:
-  LaserDeviceIdentifier(const String& factory, const String& value)
-    : StringDeviceIdentifier(factory, value) {}
-  LaserDeviceIdentifier() {}
+class LaserDeviceIdentifier : public StringDeviceIdentifier
+{
+public:
+LaserDeviceIdentifier(const String& factory, const String& value)
+  : StringDeviceIdentifier(factory, value) {}
+LaserDeviceIdentifier() {}
 
-  OIL_OBJECT(LaserDeviceIdentifier);
+OIL_OBJECT(LaserDeviceIdentifier);
 
-  };
+};
 
 }; /* namespace smode */
 
