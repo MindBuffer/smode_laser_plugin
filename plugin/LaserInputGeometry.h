@@ -32,9 +32,6 @@ public:
   bool computeLines(GraphicsRenderer& renderer, const Geometry& inputGeometry, const GeometryMask& mask, float maskThreshold, size_t weight)
   {
     configure(linesGeometryShader, mask, maskThreshold, weight);
-    linesGeometryShader.getMask().set(&mask);
-    pointsGeometryShader.getMaskTreshold.set(maskThreshold);
-    pointsGeometryShader.getWeight().set(weight);
     numPoints = 0;
     numLines = inputGeometry.getNumLines();
     String failureReason;
@@ -120,7 +117,7 @@ protected:
   void configure(LaserGeometryShader& geometryShader, const GeometryMask& mask, float maskThreshold, size_t weight)
   {
     geometryShader.getMask().set(&mask);
-    geometryShader.getMaskTreshold.set(maskThreshold);
+    geometryShader.getMaskThreshold().set(maskThreshold);
     geometryShader.getWeight().set(weight);
   }
 

@@ -33,10 +33,11 @@ public:
     // This is because the render callback always emits the last received frame.
     points.clear();
     bool ok;
+    const GeometryMask& mask = maskCompositer.updateAndGetMask(geometry, masks);
     if (geometryType == LaserGeometryType::points)
-      ok = inputGeometry.computePoints(renderer, geometry, getMask(), maskThreshold, weight);
+      ok = inputGeometry.computePoints(renderer, geometry, mask, maskThreshold, weight);
     else
-      ok = inputGeometry.computeLines(renderer, geometry, getMask(), maskThreshold, weight);
+      ok = inputGeometry.computeLines(renderer, geometry, mask, maskThreshold, weight);
     if (ok)
     {
       String failureReason;
@@ -90,7 +91,7 @@ private:
   GeometryMaskCompositer maskCompositer;
 
   GeometryMask& getMask()
-    {return maskCompositer.updateAndGetMask(dummyGeometry, masks);}
+    {return ;}
 
 private:
   typedef LaserDevice::Point Point;
