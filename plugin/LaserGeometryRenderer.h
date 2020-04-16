@@ -19,17 +19,6 @@ class LaserGeometryRenderer : public GeometryLayerUser
 public:
   LaserGeometryRenderer() {}
 
-  void variableChangedCallback(Object* variable, Object* changedObject) override
-  {
-    if (!isActive() && isRenderingServiceCurrent()) {
-      LaserDevice* laserDevice = device.getDevice();
-      if (laserDevice) {
-        const std::vector<Point> empty;
-        laserDevice->updateFrame(empty);
-      }
-    }
-  }
-
   // GeometryLayerUser
   bool usesGeometryType(GeometryType::Enum type) const override
     {return type == GeometryType::lines || type == GeometryType::points;}
@@ -37,19 +26,26 @@ public:
   void renderGeometry(GraphicsRenderer& renderer, LayerInterpreter& interpreter, const Geometry& geometry, double opacity) override
   {
     LaserDevice* laserDevice = device.getDevice();
-    if (!laserDevice) {
+    if (!laserDevice)
       return;
-    }
 
     // In the case that any of the following fails, we still want to submit at least an empty frame.
     // This is because the render callback always emits the last received frame.
     points.clear();
-    if (inputGeometry.compute(renderer, geometry)) {
+    bool ok;
+    if (geometryType == LaserGeometryType::points)
+      ok = inputGeometry.computePoints(renderer, geometry, getMask(), maskThreshold, weight);
+    else
+      ok = inputGeometry.computeLines(renderer, geometry, getMask(), maskThreshold, weight);
+    if (ok)
+    {
       String failureReason;
-      if (inputGeometry.downloadToRam(renderer.getGraphics(), downloadedPoints, failureReason)) {
-        if (!downloadedPoints.empty()) {
+      if (inputGeometry.downloadToRam(renderer.getGraphics(), downloadedPoints, failureReason) && !downloadedPoints.empty())
+      {
+        if (geometryType == LaserGeometryType::points)
           computeFinalPoints(downloadedPoints, points);
-        }
+        else
+          computeFinalLines(downloadedPoints, points);
       }
     }
     laserDevice->updateFrame(points);
@@ -59,12 +55,48 @@ public:
   int64_t computeVersion() const override
     {return (int64_t)getCurrentFrameNumber();}
 
+  void deactivate() override
+  {
+    BaseClass::deactivate();
+    LaserDevice* laserDevice = device.getDevice();
+    if (laserDevice)
+      laserDevice->updateFrame(std::vector<Point>()); // FIXME: I'm not sure to understand why we need this. Side question: does it work to have multiple renderers?
+  }
+/*
+  // Object
+  void variableChangedCallback(Object* variable, Object* changedObject) override
+  {
+    if (!isActive() && isRenderingServiceCurrent())
+    {
+      LaserDevice* laserDevice = device.getDevice();
+      if (laserDevice) {
+        const std::vector<Point> empty;
+        laserDevice->updateFrame(empty);
+      }
+    }
+  }*/
+
   OIL_OBJECT(LaserGeometryRenderer);
 
 protected:
+  LaserDeviceSelector device;
+  LaserGeometryType geometryType;
+  StrictlyPositiveInteger weight;
+  Percentage maskThreshold;
+  OwnedVector<GeometryMask> masks;
+
+private:
+  DummyGeometry dummyGeometryForMasks;
+  GeometryMaskCompositer maskCompositer;
+
+  GeometryMask& getMask()
+    {return maskCompositer.updateAndGetMask(dummyGeometry, masks);}
+
+private:
   typedef LaserDevice::Point Point;
 
-  LaserDeviceSelector device;
+  // not introspected:
+  LaserInputGeometry inputGeometry;
   std::vector<Point> downloadedPoints;
   std::vector<Point> points;
 
@@ -88,6 +120,16 @@ protected:
 
   void computeFinalPoints(const std::vector<Point>& points, std::vector<Point>& res)
   {
+    for (size_t i = 0; i < points.size(); ++i)
+    {
+      const Point& point = points[i];
+      res.push_back(point);
+      res.push_back(withBlack(point));
+    }
+  }
+  
+  void computeFinalLines(const std::vector<Point>& points, std::vector<Point>& res)
+  {
     jassert(points.size() % 2 == 0);
     if (points.size() < 2)
       return;
@@ -108,8 +150,6 @@ protected:
       res.push_back(currentB);
     }
   }
-
-  LaserInputGeometry inputGeometry; // not introspected
 
 private:
   typedef GeometryLayerUser BaseClass;

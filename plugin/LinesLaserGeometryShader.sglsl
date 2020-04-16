@@ -1,0 +1,25 @@
+/* -------------------------------------- . ------------------------------------ .
+| Filename : LinesLaserGeometryShader.sglsl | Generate Laser Lines               |
+| Author   : Francis Maes                   | geometry shader                    |
+| Started  : 07/04/2020 07:54               |                                    |
+` --------------------------------------- . ----------------------------------- */
+
+#include "LaserGeometryShader.sglsl"
+
+layout (lines) in;
+layout (line_strip) out;
+layout (max_vertices = 2) out;
+
+struct LinesLaserGeometryShader : LaserGeometryShader
+{
+  LaserPoint sglslMain(const VertexAttributes vertices[])
+  {
+    float maskValue = (evaluateMask(vertices[0]) + evaluateMask(vertices[1])) / 2.0;
+    int w = computeWeight(maskValue);
+    if (w > 0)
+    {
+      emitLaserPoint(vertices[0], w);
+      emitLaserPoint(vertices[1], w);
+    }
+  }
+};

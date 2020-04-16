@@ -1,0 +1,22 @@
+/* -------------------------------------- . ------------------------------------ .
+| Filename : PointsLaserGeometryShader.sglsl| Generate Laser Points              |
+| Author   : Francis Maes                   | geometry shader                    |
+| Started  : 16/04/2020 14:20               |                                    |
+` --------------------------------------- . ----------------------------------- */
+
+#include "LaserGeometryShader.sglsl"
+
+layout (points) in;
+layout (points) out;
+layout (max_vertices = 1) out;
+
+struct PointsLaserGeometryShader : LaserGeometryShader
+{
+  LaserPoint sglslMain(const VertexAttributes vertices[])
+  {
+    float maskValue = evaluateMask(vertices[0]);
+    int w = computeWeight(maskValue);
+    if (w > 0)
+      emitLaserPoint(vertices[0], w);
+  }
+};

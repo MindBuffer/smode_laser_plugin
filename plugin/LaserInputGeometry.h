@@ -11,16 +11,34 @@
 
 namespace smode
 {
+
 class LaserInputGeometry : public RenderedGeometry
 {
 public:
-  LaserInputGeometry() : numLines(0) {}
+  LaserInputGeometry() : numPoints(0), numLines(0) {}
 
-  bool compute(GraphicsRenderer& renderer, const Geometry& inputGeometry)
+  bool computePoints(GraphicsRenderer& renderer, const Geometry& inputGeometry, const GeometryMask& mask, float maskThreshold, size_t weight)
   {
+    configure(pointsGeometryShader, mask, maskThreshold, weight);
+    numLines = 0;
+    numPoints = inputGeometry.getNumPoints();
+    String failureReason;
+    bool res = transformFeedbackGeometry(renderer, inputGeometry, 1, inputGeometry.getNumPoints(), pointsGeometryShader, failureReason);
+    if (!res)
+      numPoints = 0;
+    return res;
+  }
+
+  bool computeLines(GraphicsRenderer& renderer, const Geometry& inputGeometry, const GeometryMask& mask, float maskThreshold, size_t weight)
+  {
+    configure(linesGeometryShader, mask, maskThreshold, weight);
+    linesGeometryShader.getMask().set(&mask);
+    pointsGeometryShader.getMaskTreshold.set(maskThreshold);
+    pointsGeometryShader.getWeight().set(weight);
+    numPoints = 0;
     numLines = inputGeometry.getNumLines();
     String failureReason;
-    bool res = transformFeedbackGeometry(renderer, inputGeometry, 1, inputGeometry.getNumLines() * 2, geometryShader, failureReason);
+    bool res = transformFeedbackGeometry(renderer, inputGeometry, 1, inputGeometry.getNumLines() * 2, linesGeometryShader, failureReason);
     if (!res)
       numLines = 0;
     return res;
@@ -28,7 +46,7 @@ public:
 
   // Geometry
   size_t getNumPoints() const override
-    {return 0;}
+    {return numPoints;}
 
   size_t getNumLines() const override
     {return numLines;}
@@ -86,7 +104,8 @@ public:
   OIL_OBJECT(LaserInputGeometry);
 
 protected:
-  LaserInputGeometryShader geometryShader;
+  PointsLaserGeometryShader pointsGeometryShader;
+  LinesLaserGeometryShader linesGeometryShader;
 
   // RenderedGeometry
   void initializeInterleavedBufferLayer(BufferArray& bufferArray) override
@@ -96,7 +115,14 @@ protected:
     bufferArray.appendInterleavedBufferLayout(BufferLayout("weight", 1, BufferComponentType::uint32));
   }
 
-  size_t numLines;
+  size_t numPoints, numLines;
+
+  void configure(LaserGeometryShader& geometryShader, const GeometryMask& mask, float maskThreshold, size_t weight)
+  {
+    geometryShader.getMask().set(&mask);
+    geometryShader.getMaskTreshold.set(maskThreshold);
+    geometryShader.getWeight().set(weight);
+  }
 
 private:
   typedef RenderedGeometry BaseClass;

@@ -42,18 +42,43 @@
   <class name="LaserPoint" generated="cpp">
     <attribute name="shaderSourceCode" stringfile="LaserPoint.sglsl"/>
   </class>
-  <class name="LaserInputGeometryShader" base="GeometryShader" generated="cpp">
-    <attribute name="shaderSourceCode" stringfile="LaserInputGeometryShader.sglsl"/>
+  
+  <class name="LaserGeometryShader" base="GeometryShader" abstract="yes" generated="cpp">
+    <attribute name="shaderSourceCode" stringfile="LaserGeometryShader.sglsl"/>
+
+    <variable class="WeakPointer(GeometryMask)" name="mask"/>
+    <variable class="Percentage" name="maskThreshold" default="0.1"/>
+    <variable class="StrictlyPositiveInteger" name="weight"/>
+  </class>
+  
+  <class name="PointsLaserGeometryShader" base="LaserGeometryShader" generated="cpp">
+    <attribute name="shaderSourceCode" stringfile="PointsLaserGeometryShader.sglsl"/>
+    <attribute name="inputGeometryType">"points"</attribute>
+    <attribute name="outputGeometryType">"points"</attribute>
+  </class>
+  
+  <class name="LinesLaserGeometryShader" base="LaserGeometryShader" generated="cpp">
+    <attribute name="shaderSourceCode" stringfile="LinesLaserGeometryShader.sglsl"/>
     <attribute name="inputGeometryType">"lines"</attribute>
     <attribute name="outputGeometryType">"lines"</attribute>
   </class>
+  
   <class name="LaserInputGeometry" base="RenderedGeometry" abstract="true"/>
 
+  <class name="LaserGeometryType" base="Enumeration">
+    <element name="points"/>
+    <element name="lines"/>
+  </class>
+  
   <class name="LaserGeometryRenderer" base="GeometryLayerUser">
     <attribute name="friendlyName">"Laser Renderer"</attribute>
     <attribute name="secret">true</attribute>
 
     <variable class="LaserDeviceSelector" name="device"/>
+    <variable class="LaserGeometryType" name="geometryType"/>
+    <variable class="StrictlyPositiveInteger" name="weight"/>
+    <variable class="Percentage" name="maskThreshold" default="0.1"/>
+    <variable class="OwnedVector(GeometryMask)" name="masks"/>
   </class>
 
 </library>
