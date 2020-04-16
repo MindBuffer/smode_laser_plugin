@@ -87,7 +87,6 @@ protected:
   OwnedVector<GeometryMask> masks;
 
 private:
-  DummyGeometry dummyGeometryForMasks;
   GeometryMaskCompositer maskCompositer;
 
   GeometryMask& getMask()
