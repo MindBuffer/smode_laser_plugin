@@ -208,7 +208,7 @@ public:
     BaseClass::deinitializeDevice();
   }
 
-  virtual void update() override {
+  virtual void update(const FrameInformation& frame) override {
       updateFrame();
   }
 
@@ -220,8 +220,19 @@ public:
   };
 
   // Concatenates the given points onto the points to be presented this frame.
-  void concatFramePoints(const std::vector<Point>& smode_points) {
-      frame_points.insert(frame_points.end(), smode_points.begin(), smode_points.end());
+  // This method will blank from the last of the existing frame points to the
+  // first of the given new points.
+  void concatFramePoints(const std::vector<Point>& new_points) {
+      // Blank from the last renderer's last point to the first new point.
+      if (!frame_points.empty() && !new_points.empty()) {
+          Point a = frame_points.back();
+          Point b = new_points.front();
+          a.color = glm::vec3(0.f);
+          b.color = glm::vec3(0.f);
+          frame_points.push_back(a);
+          frame_points.push_back(b);
+      }
+      frame_points.insert(frame_points.end(), new_points.begin(), new_points.end());
   }
 
   // Send the current `frame_points` as a `FrameMsg` to the DAC callback.
