@@ -19,17 +19,6 @@ class LaserGeometryRenderer : public GeometryLayerUser
 public:
   LaserGeometryRenderer() {}
 
-  void variableChangedCallback(Object* variable, Object* changedObject) override
-  {
-    if (!isActive() && isRenderingServiceCurrent()) {
-      LaserDevice* laserDevice = device.getDevice();
-      if (laserDevice) {
-        const std::vector<Point> empty;
-        laserDevice->updateFrame(empty);
-      }
-    }
-  }
-
   // GeometryLayerUser
   bool usesGeometryType(GeometryType::Enum type) const override
     {return type == GeometryType::lines || type == GeometryType::points;}
@@ -41,18 +30,20 @@ public:
       return;
     }
 
-    // In the case that any of the following fails, we still want to submit at least an empty frame.
-    // This is because the render callback always emits the last received frame.
+    if (!inputGeometry.compute(renderer, geometry))
+      return;
+
+    String failureReason;
+    if (!inputGeometry.downloadToRam(renderer.getGraphics(), downloadedPoints, failureReason))
+      // TODO: Report `failureReason`?
+      return;
+
+    if (downloadedPoints.empty())
+      return;
+
     points.clear();
-    if (inputGeometry.compute(renderer, geometry)) {
-      String failureReason;
-      if (inputGeometry.downloadToRam(renderer.getGraphics(), downloadedPoints, failureReason)) {
-        if (!downloadedPoints.empty()) {
-          computeFinalPoints(downloadedPoints, points);
-        }
-      }
-    }
-    laserDevice->updateFrame(points);
+    computeFinalPoints(downloadedPoints, points);
+    laserDevice->concatFramePoints(points);
   }
 
   // Element

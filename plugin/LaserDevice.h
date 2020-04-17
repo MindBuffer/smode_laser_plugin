@@ -208,6 +208,10 @@ public:
     BaseClass::deinitializeDevice();
   }
 
+  virtual void update() override {
+      updateFrame();
+  }
+
   struct Point
   {
     glm::vec2 position; // in range [-1, 1]
@@ -215,21 +219,28 @@ public:
     uint32_t weight; // 0 for smooth line segments, > 0 for accenting individual points
   };
 
-  // Creates a new `Frame` from the given points and makes it available to the render callback.
-  void updateFrame(const std::vector<Point>& smode_points) {
-    // We always want to send a msg, even if its empty.
+  // Concatenates the given points onto the points to be presented this frame.
+  void concatFramePoints(const std::vector<Point>& smode_points) {
+      frame_points.insert(frame_points.end(), smode_points.begin(), smode_points.end());
+  }
+
+  // Send the current `frame_points` as a `FrameMsg` to the DAC callback.
+  void updateFrame() {
+    // We always want to send a msg, even if there were no points.
     // This is because the render callback always emits the last frame received.
     laser::FrameMsg msg;
     laser::frame_msg_new(&msg);
-    // Only write the points if we're not muted, we're not in an error state and we actually have some.
-    if (!smode_points.empty() && !mute && !getStatus().isError()) {
+    // Write points if we're not muted, we're not in an error state and we actually have some.
+    if (!frame_points.empty() && !mute && !getStatus().isError()) {
       // Layout *must* match or we will get very strange behaviour.
       jassert(sizeof(Point) == sizeof(laser::Point));
-      const laser::Point* points = reinterpret_cast<const laser::Point*>(&smode_points[0]);
+      const laser::Point* points = reinterpret_cast<const laser::Point*>(&frame_points[0]);
       laser::SequenceType ty = laser::SequenceType::Lines;
-      laser::frame_msg_add_sequence(&msg, ty, points, smode_points.size());
+      laser::frame_msg_add_sequence(&msg, ty, points, frame_points.size());
     }
     laser::send_frame_msg(&frame_tx, msg);
+    // Clear the frame points, ready to collect from the renderers before next update.
+    frame_points.clear();
   }
 
   // A pointer to the laser API instance.
@@ -241,6 +252,8 @@ public:
   laser::FrameSender frame_tx;
   // Shared with the laser callback.
   std::shared_ptr<CallbackData> callback_data;
+  // The buffer used for collecting points from each of the geometry renderers.
+  std::vector<Point> frame_points;
 
   OIL_OBJECT(LaserDevice);
 
