@@ -23,7 +23,6 @@ public:
 
   OIL_ABSTRACT_OBJECT(LaserDeviceSelector);
 };
-
 }; /* namespace smode */
 
 #endif // !SMODE_LASER_DEVICE_SELECTOR_H_

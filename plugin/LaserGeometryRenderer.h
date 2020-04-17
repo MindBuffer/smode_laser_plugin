@@ -43,7 +43,7 @@ public:
 
     points.clear();
     computeFinalPoints(downloadedPoints, points);
-    laserDevice->concatFramePoints(points);
+    laserDevice->addLineSequence(points);
   }
 
   // Element

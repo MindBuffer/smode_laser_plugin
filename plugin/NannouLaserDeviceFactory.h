@@ -1,15 +1,15 @@
 /* -------------------------------------- . ---------------------------------- .
-| Filename : LaserDeviceFactory.h         |                                    |
+| Filename : NannouLaserDeviceFactory.h   |                                    |
 | Author   : MindBuffer                   |                                    |
 | Started  : 05/04/2020 07:16             |                                    |
 ` --------------------------------------- . --------------------------------- */
 
-#ifndef SMODE_LASER_DEVICE_FACTORY_H_
-# define SMODE_LASER_DEVICE_FACTORY_H_
+#ifndef SMODE_NANNOU_LASER_DEVICE_FACTORY_H_
+# define SMODE_NANNOU_LASER_DEVICE_FACTORY_H_
 
 #include "LaserLibrary.h"
-#include "LaserDeviceIdentifier.h"
-#include "LaserDevice.h"
+#include "NannouLaserDeviceIdentifier.h"
+#include "NannouLaserDevice.h"
 
 namespace smode
 {
@@ -24,10 +24,10 @@ String macAddressToString(uint8_t mac_address[6])
   return s;
 }
 
-class LaserDeviceFactory : public DeviceFactory
+class NannouLaserDeviceFactory : public DeviceFactory
 {
 public:
-  LaserDeviceFactory() {}
+  NannouLaserDeviceFactory() {}
 
   String getName() const override
   {
@@ -84,10 +84,10 @@ public:
       detected_dacs.assign(dacs, dacs + dac_count);
     }
 
-    // Convert the detected DACs into `LaserDeviceIdentifier`s that SMODE can work with.
+    // Convert the detected DACs into `NannouLaserDeviceIdentifier`s that SMODE can work with.
     for (auto dac : detected_dacs) {
       String mac_string = macAddressToString(dac.kind.ether_dream.broadcast.mac_address);
-      res.push_back(new LaserDeviceIdentifier(getName(), mac_string));
+      res.push_back(new NannouLaserDeviceIdentifier(getName(), mac_string));
     }
     return true;
   }
@@ -98,15 +98,14 @@ public:
       String mac_string = macAddressToString(dac.kind.ether_dream.broadcast.mac_address);
 
       if (mac_string == identifier.getFriendlyName()) {
-          LaserDevice* device = new LaserDevice(identifier, dac);
-          device->laser_api = &api;
+          NannouLaserDevice* device = new NannouLaserDevice(identifier, &api, dac);
           return device;
       }
     }
     return nullptr;
   }
 
-  OIL_OBJECT(LaserDeviceFactory);
+  OIL_OBJECT(NannouLaserDeviceFactory);
 
 private:
   mutable laser::Api api;
@@ -116,4 +115,4 @@ private:
 };
 }; /* namespace smode */
 
-#endif // !SMODE_LASER_DEVICE_FACTORY_H_
+#endif // !SMODE_NANNOU_LASER_DEVICE_FACTORY_H_

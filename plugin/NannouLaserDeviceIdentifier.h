@@ -1,27 +1,25 @@
 /* -------------------------------------- . ---------------------------------- .
-| Filename : LaserDeviceIdentifier.h      |                                    |
+| Filename : NannouLaserDeviceIdentifier.h|                                    |
 | Author   : MindBuffer                   |                                    |
 | Started  : 05/04/2020 07:16             |                                    |
 ` --------------------------------------- . --------------------------------- */
 
-#ifndef SMODE_LASER_DEVICE_IDENTIFIER_H_
-# define SMODE_LASER_DEVICE_IDENTIFIER_H_
+#ifndef SMODE_NANNOU_LASER_DEVICE_IDENTIFIER_H_
+# define SMODE_NANNOU_LASER_DEVICE_IDENTIFIER_H_
 
 #include "LaserLibrary.h"
 
 namespace smode
 {
-class LaserDeviceIdentifier : public StringDeviceIdentifier
+class NannouLaserDeviceIdentifier : public StringDeviceIdentifier
 {
 public:
-LaserDeviceIdentifier(const String& factory, const String& value)
+NannouLaserDeviceIdentifier(const String& factory, const String& value)
   : StringDeviceIdentifier(factory, value) {}
-LaserDeviceIdentifier() {}
+NannouLaserDeviceIdentifier() {}
 
-OIL_OBJECT(LaserDeviceIdentifier);
-
+OIL_OBJECT(NannouLaserDeviceIdentifier);
 };
-
 }; /* namespace smode */
 
-#endif // !SMODE_LASER_DEVICE_IDENTIFIER_H_
+#endif // !SMODE_NANNOU_LASER_DEVICE_IDENTIFIER_H_

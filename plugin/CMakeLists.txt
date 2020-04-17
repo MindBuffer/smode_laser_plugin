@@ -8,9 +8,10 @@ find_package(SmodeSDK REQUIRED)
 SET (LASER_PLUGIN_SOURCES
   LaserPoint.sglsl
   LaserInputGeometryShader.sglsl
-  LaserDeviceIdentifier.h
+  NannouLaserDeviceIdentifier.h
+  NannouLaserDevice.h
+  NannouLaserDeviceFactory.h
   LaserDevice.h
-  LaserDeviceFactory.h
   LaserDeviceSelector.h
   LaserInputGeometry.h
   LaserGeometryRenderer.h

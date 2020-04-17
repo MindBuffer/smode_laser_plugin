@@ -5,13 +5,15 @@
   <description language="us-en">Smode Laser plugin.</description>
   <include fromApi="true" file="SmodeSDK/SmodeSDK.h" public="true"/>
 
-  <class name="LaserDeviceFactory" base="DeviceFactory">
-    <attribute name="deviceBaseClass">ControlDevice</attribute>
-    <attribute name="deviceClass">LaserDevice</attribute>
+  <class name="NannouLaserDeviceFactory" base="DeviceFactory">
+    <attribute name="deviceBaseClass">LaserDevice</attribute>
+    <attribute name="deviceClass">NannouLaserDevice</attribute>
   </class>
-  <class name="LaserDeviceIdentifier" base="StringDeviceIdentifier"/>
+  <class name="NannouLaserDeviceIdentifier" base="StringDeviceIdentifier"/>
   
-  <class name="LaserDevice" base="ControlDevice">
+  <class name="LaserDevice" base="ControlDevice" abstract="true"/>
+
+  <class name="NannouLaserDevice" base="LaserDevice">
     <variable class="PositiveInteger" name="dacPointsPerSecond" default="10000">
       <attribute name ="friendlyName">"DAC Points Per Second"</attribute>
       <attribute name ="minimum">1000</attribute>
