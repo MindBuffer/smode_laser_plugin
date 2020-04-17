@@ -16,7 +16,7 @@ class LaserDevice : public ControlDevice
 public:
   LaserDevice(const DeviceIdentifier& identifier)
     : ControlDevice(identifier) {}
-  LaserDevice(); // default constructible for proxy
+  LaserDevice() {} // default constructible for proxy
 
   struct Point
   {
@@ -35,8 +35,9 @@ public:
   // and cleared once per `update`.
   virtual void addLineSequence(const std::vector<Point>& new_points) = 0;
 
-  OIL_OBJECT(NannouLaserDevice);
-}
+  OIL_ABSTRACT_OBJECT(LaserDevice);
+};
+
 }; /* namespace smode */
 
 #endif // !SMODE_LASER_DEVICE_H_
