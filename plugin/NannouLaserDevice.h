@@ -16,7 +16,7 @@ class NannouLaserDevice : public LaserDevice
 {
 public:
   NannouLaserDevice(const DeviceIdentifier& identifier, laser::Api* _api, laser::DetectedDac _dac)
-    : LaserDevice(identifier), dacPointsPerSecond(10000), latencyPoints(166), targetFps(60), blankDelayPoints(10), distancePerPoint(0.1), anglePerPoint(0.6), api(_api), dac(_dac), callback_data(std::make_shared<CallbackData>())
+    : LaserDevice(identifier), dacPointsPerSecond(10000), latencyPoints(166), targetFps(60), blankDelayPoints(10), distancePerPoint(0.1), anglePerPoint(0.6), laser_api(_api), dac(_dac), callback_data(std::make_shared<CallbackData>())
   {
     dacPointsPerSecond.setParent(this);
     latencyPoints.setParent(this);
@@ -257,7 +257,7 @@ private:
   // `streamErrorCallback`. The current `streamErrorCallback` implementation
   // will continuously attempt to re-connect to the TCP stream or re-detect the
   // DAC in the case that a timeout occurs.
-  static const float TCP_TIMEOUT_SECS = 1.2;
+  static const uint32_t TCP_TIMEOUT_SECS = 2;
   // The number of times to attempt re-connecting to the TCP stream in the case
   // that it drops out. Once this number is exceeded, the `streamErrorCallback`
   // implementation will then attempt to re-detect the DAC.
@@ -288,7 +288,7 @@ private:
   PositiveAngle anglePerPoint; // This is actually in radians but displayed to the user in degrees
 
   typedef LaserDevice BaseClass;
-}
+};
 }; // namespace smode
 
 #endif // !SMODE_NANNOU_LASER_DEVICE_H_
