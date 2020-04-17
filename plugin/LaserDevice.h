@@ -113,12 +113,14 @@ public:
 
   void variableChangedCallback(Object* variable, Object* changedObject) override
   {      
-    if (isInitialized() && isRenderingServiceCurrent()) {
+    if (isRenderingServiceCurrent() && isInitialized()) {
       if (variable == &dacPointsPerSecond) {
-        laser::frame_stream_set_point_hz(&frame_stream, (uint32_t)dacPointsPerSecond);
+        uint32_t dpps = juce::jlimit((uint32_t)1000, (uint32_t)dac.kind.ether_dream.broadcast.max_point_rate, (uint32_t)dacPointsPerSecond);
+        laser::frame_stream_set_point_hz(&frame_stream, dpps);
       }
       else if (variable == &latencyPoints) {
-        laser::frame_stream_set_latency_points(&frame_stream, (uint32_t)latencyPoints);
+        uint32_t lp = juce::jlimit((uint32_t)10, (uint32_t)dac.kind.ether_dream.broadcast.buffer_capacity, (uint32_t)latencyPoints);
+        laser::frame_stream_set_latency_points(&frame_stream, lp);
       }
       else if (variable == &targetFps) {
         laser::frame_stream_set_frame_hz(&frame_stream, (uint32_t)targetFps);
@@ -133,12 +135,13 @@ public:
         laser::frame_stream_set_radians_per_point(&frame_stream, (float)anglePerPoint);
       }
     }
-
-    if (!isApplyingVariableConstraints()) {
+   
+   
+    if (isApplyingVariableConstraints() && isRenderingServiceCurrent()) {
       if (variable == &dacPointsPerSecond) {
         VariableConstraintsScope _(*this);
         uint32_t runtimeMax = dac.kind.ether_dream.broadcast.max_point_rate;
-        if ((uint32_t)dacPointsPerSecond > runtimeMax)
+        if ((uint32_t)dacPointsPerSecond > runtimeMax) 
           dacPointsPerSecond.set(runtimeMax);
       }
       else if (variable == &latencyPoints) {
@@ -148,7 +151,7 @@ public:
           latencyPoints.set(runtimeMax);
       }
     }
-
+    
     BaseClass::variableChangedCallback(variable, changedObject);
   }
   
@@ -278,7 +281,6 @@ private:
   PositiveInteger blankDelayPoints;
   PositiveAngle anglePerPoint; // This is actually in radians but displayed to the user in degrees
 };
-
 
 }; /* namespace smode */
 
