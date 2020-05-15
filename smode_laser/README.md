@@ -59,6 +59,10 @@ We should now have a `smode_laser.h` file containing all the necessary
 extern declarations for calling into our static library! We are now ready to
 include our static library and header in our plugin.
 
+*Please note that the `smode_laser.h` file may already exist within the
+repository. However, we should still run the commands above to ensure that it is
+up-to-date with the latest version of `smode_laser` and its dependencies.*
+
 ## Generating Documentation
 
 You can generate the API reference documentation for the library with the
@@ -71,6 +75,45 @@ cargo doc --open
 This will compile the documentation for the library and open it with the
 system's default web browser.
 
+## Updating dependencies
+
+Occasionally, new versions of upstream dependencies are released with various
+fixes, improvements and/or optimisations that we might want to take advantage
+of. To update to the most recent, non-breaking patch release for each
+dependency, we can run the following:
+
+```
+cargo update
+```
+
+For example, if we are currently using `nannou_laser` version 0.14.0, but
+version 0.14.2 was recently released and we want to use it, we can do so by
+running `cargo update`.
+
+We can find out if a new version of a dependency is released by using `cargo
+search`. For example, to search for the latest version of `nannou_laser`, we can
+run the following:
+
+```
+cargo search nannou_laser
+```
+
+In the case that `nannou_laser` is updated to version `0.15.0`, we must also
+update the dependency version within the `Cargo.toml` file under the
+`dependencies` section. However, note that a jump in the major version like this
+indicates a breaking change. Breaking changes may require updating some of the
+code within `smode_laser` and in turn the plugin that depends on it.
+
+Details about changes to the `nannou_laser` dependency between different
+versions can be found at [the nannou changelog][4]. This log can be invaluable
+for determining how to update `smode_laser` for a new breaking change. This
+changelog also includes changes to other libraries within the nannou ecosystem,
+so it may be worth searching the page for "laser" to find relevant entries.
+
+Once dependencies have been updated, be sure to follow the steps above to
+rebuild the library and re-generate the C header.
+
 [1]: https://www.rust-lang.org/tools/install
 [2]: https://www.rust-lang.org/learn
 [3]: https://github.com/eqrion/cbindgen
+[4]: https://guide.nannou.cc/changelog.html
