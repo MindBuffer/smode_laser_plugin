@@ -97,6 +97,7 @@ private:
     for (size_t i = 0; i < points.size(); ++i)
     {
       const Point& point = points[i];
+      res.push_back(withBlack(point)); 
       res.push_back(point);
       res.push_back(withBlack(point));
     }
@@ -118,6 +119,7 @@ private:
       {
         res.push_back(withBlack(previousB));
         res.push_back(withBlack(currentA));
+        res.push_back(currentA);
       }
       else if (!isSameColor(previousB.color, currentA.color))
         res.push_back(currentA);
