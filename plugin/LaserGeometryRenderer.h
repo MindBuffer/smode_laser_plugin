@@ -29,24 +29,13 @@ public:
     if (!laserDevice)
       return;
 
-    if (!inputGeometry.compute(renderer, geometry))
-      return;
-
-    String failureReason;
-    if (!inputGeometry.downloadToRam(renderer.getGraphics(), downloadedPoints, failureReason))
-      // TODO: Report `failureReason`?
-      return;
-
-    if (downloadedPoints.empty())
-      return;
-
     points.clear();
     bool ok;
     const GeometryMask& mask = maskCompositer.updateAndGetMask(geometry, masks);
     if (geometryType == LaserGeometryType::points)
-      ok = inputGeometry.computePoints(renderer, geometry, mask, maskThreshold, weight);
+      ok = inputGeometry.computePoints(renderer, geometry, mask, (float)maskThreshold, weight);
     else
-      ok = inputGeometry.computeLines(renderer, geometry, mask, maskThreshold, weight);
+      ok = inputGeometry.computeLines(renderer, geometry, mask, (float)maskThreshold, weight);
     if (ok)
     {
       String failureReason;
@@ -65,27 +54,6 @@ public:
   int64_t computeVersion() const override
     {return (int64_t)getCurrentFrameNumber();}
 
-  void deactivate() override
-  {
-    BaseClass::deactivate();
-    LaserDevice* laserDevice = device.getDevice();
-    if (laserDevice)
-      laserDevice->updateFrame(std::vector<Point>()); // FIXME: I'm not sure to understand why we need this. Side question: does it work to have multiple renderers?
-  }
-/*
-  // Object
-  void variableChangedCallback(Object* variable, Object* changedObject) override
-  {
-    if (!isActive() && isRenderingServiceCurrent())
-    {
-      LaserDevice* laserDevice = device.getDevice();
-      if (laserDevice) {
-        const std::vector<Point> empty;
-        laserDevice->updateFrame(empty);
-      }
-    }
-  }*/
-
   OIL_OBJECT(LaserGeometryRenderer);
 
 protected:
@@ -97,9 +65,6 @@ protected:
 
 private:
   GeometryMaskCompositer maskCompositer;
-
-  GeometryMask& getMask()
-    {return ;}
 
 private:
   typedef LaserDevice::Point Point;

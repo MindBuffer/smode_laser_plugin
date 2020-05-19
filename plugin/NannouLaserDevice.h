@@ -12,71 +12,25 @@
 
 namespace smode
 {
+
 class NannouLaserDevice : public LaserDevice
 {
 public:
   NannouLaserDevice(const DeviceIdentifier& identifier, laser::Api* _api, laser::DetectedDac _dac)
-    : LaserDevice(identifier), dacPointsPerSecond(10000), latencyPoints(166), targetFps(60), blankDelayPoints(10), distancePerPoint(0.1), anglePerPoint(0.6), laser_api(_api), dac(_dac), callback_data(std::make_shared<CallbackData>())
+    : LaserDevice(identifier), dacPointsPerSecond(10000), latencyPoints(166), distancePerPoint(0.1), blankDelayPoints(10), anglePerPoint(0.6),
+      laser_api(_api), dac(_dac), callback_data(std::make_shared<CallbackData>()), targetFps(0)
   {
     dacPointsPerSecond.setParent(this);
     latencyPoints.setParent(this);
-    targetFps.setParent(this);
     distancePerPoint.setParent(this);
     blankDelayPoints.setParent(this);
     anglePerPoint.setParent(this);
   }
-  NannouLaserDevice() {}
+  NannouLaserDevice() : dacPointsPerSecond(10000), latencyPoints(166), distancePerPoint(0.1), blankDelayPoints(10), anglePerPoint(0.6), targetFps(0) {}
 
-  bool hasVariableConstraints() const override
-    {return true;}
-
-  void variableChangedCallback(Object* variable, Object* changedObject) override
-  {      
-    if (!isRenderingServiceCurrent())
-      return;
-
-    if (isInitialized()) {
-      if (variable == &dacPointsPerSecond) {
-        uint32_t dpps = juce::jlimit((uint32_t)1000, (uint32_t)dac.kind.ether_dream.broadcast.max_point_rate, (uint32_t)dacPointsPerSecond);
-        laser::frame_stream_set_point_hz(&frame_stream, dpps);
-      }
-      else if (variable == &latencyPoints) {
-        uint32_t lp = juce::jlimit((uint32_t)10, (uint32_t)dac.kind.ether_dream.broadcast.buffer_capacity, (uint32_t)latencyPoints);
-        laser::frame_stream_set_latency_points(&frame_stream, lp);
-      }
-      else if (variable == &targetFps) {
-        laser::frame_stream_set_frame_hz(&frame_stream, (uint32_t)targetFps);
-      }
-      else if (variable == &distancePerPoint) {
-        laser::frame_stream_set_distance_per_point(&frame_stream, (uint32_t)distancePerPoint);
-      }
-      else if (variable == &blankDelayPoints) {
-        laser::frame_stream_set_blank_delay_points(&frame_stream, (uint32_t)blankDelayPoints);
-      }
-      else if (variable == &anglePerPoint) {
-        laser::frame_stream_set_radians_per_point(&frame_stream, (float)anglePerPoint);
-      }
-    }
-
-    if (isApplyingVariableConstraints()) {
-      if (variable == &dacPointsPerSecond) {
-        VariableConstraintsScope _(*this);
-        uint32_t runtimeMax = dac.kind.ether_dream.broadcast.max_point_rate;
-        if ((uint32_t)dacPointsPerSecond > runtimeMax)
-          dacPointsPerSecond.set(runtimeMax);
-      }
-      else if (variable == &latencyPoints) {
-        VariableConstraintsScope _(*this);
-        uint32_t runtimeMax = dac.kind.ether_dream.broadcast.buffer_capacity;
-        if ((uint32_t)latencyPoints > runtimeMax)
-          latencyPoints.set(runtimeMax);
-      }
-    }
-
-    BaseClass::variableChangedCallback(variable, changedObject);
-  }
-
-  bool initializeDevice() override {
+  // Device
+  bool initializeDevice() override
+  {
     BaseClass::initializeDevice();
 
     // Prepare the callback data and frame msg queue.
@@ -90,9 +44,9 @@ public:
     config.stream_conf.tcp_timeout_secs = TCP_TIMEOUT_SECS;
     config.stream_conf.detected_dac = &dac;
     config.interpolation_conf.blank_delay_points = (uint32_t)blankDelayPoints;
-    config.interpolation_conf.distance_per_point = (uint32_t)distancePerPoint;
+    config.interpolation_conf.distance_per_point = (float)distancePerPoint;
     config.interpolation_conf.radians_per_point = (float)anglePerPoint;
-    config.frame_hz = (uint32_t)targetFps;
+    config.frame_hz = targetFps = (uint32_t)FramePerSecond::getRequestedFrameRate(this);
     config.stream_conf.latency_points = (uint32_t)latencyPoints;
     config.stream_conf.point_hz = (uint32_t)dacPointsPerSecond;
 
@@ -122,7 +76,8 @@ public:
     return true;
   }
 
-  void deinitializeDevice() override {
+  void deinitializeDevice() override
+  {
     // Clean up the frame resources and ensure the thread is joined.
     laser::frame_stream_drop(frame_stream);
     // Now that the laser thread is stopped, we can clean up our channel and callback data.
@@ -132,30 +87,24 @@ public:
     BaseClass::deinitializeDevice();
   }
 
-  void update(const FrameInformation& frame) override {
-      updateFrame();
-  }
-
-  void addLineSequence(const std::vector<Point>& new_points) override {
-    if (!frame_points.empty() && !new_points.empty()) {
-        Point a = frame_points.back();
-        Point b = new_points.front();
-        a.color = glm::vec3(0.f);
-        b.color = glm::vec3(0.f);
-        frame_points.push_back(a);
-        frame_points.push_back(b);
-    }
-    frame_points.insert(frame_points.end(), new_points.begin(), new_points.end());
-  }
-
   // Send the current `frame_points` as a `FrameMsg` to the DAC callback.
-  void updateFrame() {
+  void update(const FrameInformation& frame) override
+  {
+    // Update Target FPS if it has changed
+    uint32_t targetFps = (uint32_t)FramePerSecond::getRequestedFrameRate(this);
+    if (targetFps != this->targetFps)
+    {
+      laser::frame_stream_set_frame_hz(&frame_stream, targetFps);
+      this->targetFps = targetFps;
+    }
+
     // We always want to send a msg, even if there were no points.
     // This is because the render callback always emits the last frame received.
     laser::FrameMsg msg;
     laser::frame_msg_new(&msg);
     // Write points if we're not muted, we're not in an error state and we actually have some.
-    if (!frame_points.empty() && !mute && !getStatus().isError()) {
+    if (!frame_points.empty() && !mute && !getStatus().isError())
+    {
       // Layout *must* match or we will get very strange behaviour.
       jassert(sizeof(Point) == sizeof(laser::Point));
       const laser::Point* points = reinterpret_cast<const laser::Point*>(&frame_points[0]);
@@ -163,15 +112,81 @@ public:
       laser::frame_msg_add_sequence(&msg, ty, points, frame_points.size());
     }
     laser::send_frame_msg(&frame_tx, msg);
+
     // Clear the frame points, ready to collect from the renderers before next update.
     frame_points.clear();
+  }
+
+  // LaserDevice
+  void addLineSequence(const std::vector<Point>& new_points) override
+  {
+    if (!frame_points.empty() && !new_points.empty())
+    {
+      Point a = frame_points.back();
+      Point b = new_points.front();
+      a.color = glm::vec3(0.f);
+      b.color = glm::vec3(0.f);
+      frame_points.push_back(a);
+      frame_points.push_back(b);
+    }
+    frame_points.insert(frame_points.end(), new_points.begin(), new_points.end());
+  }
+
+  // Object
+  bool hasVariableConstraints() const override
+    {return true;}
+
+  void variableChangedCallback(Object* variable, Object* changedObject) override
+  {      
+    if (isRenderingServiceCurrent() && isInitialized())
+    {
+      if (variable == &dacPointsPerSecond)
+      {
+        uint32_t dpps = juce::jlimit((uint32_t)1000, (uint32_t)dac.kind.ether_dream.broadcast.max_point_rate, (uint32_t)dacPointsPerSecond);
+        laser::frame_stream_set_point_hz(&frame_stream, dpps);
+      }
+      else if (variable == &latencyPoints)
+      {
+        uint32_t lp = juce::jlimit((uint32_t)10, (uint32_t)dac.kind.ether_dream.broadcast.buffer_capacity, (uint32_t)latencyPoints);
+        laser::frame_stream_set_latency_points(&frame_stream, lp);
+      }
+      else if (variable == &distancePerPoint)
+        laser::frame_stream_set_distance_per_point(&frame_stream, (float)distancePerPoint);
+      else if (variable == &blankDelayPoints)
+        laser::frame_stream_set_blank_delay_points(&frame_stream, (uint32_t)blankDelayPoints);
+      else if (variable == &anglePerPoint)
+        laser::frame_stream_set_radians_per_point(&frame_stream, (float)anglePerPoint);
+    }
+
+    if (!isApplyingVariableConstraints())
+    {
+      if (variable == &dacPointsPerSecond)
+      {
+        VariableConstraintsScope _(*this);
+        uint32_t runtimeMax = dac.kind.ether_dream.broadcast.max_point_rate;
+        if ((uint32_t)dacPointsPerSecond > runtimeMax)
+          dacPointsPerSecond.set(runtimeMax);
+      }
+      else if (variable == &latencyPoints)
+      {
+        VariableConstraintsScope _(*this);
+        uint32_t runtimeMax = dac.kind.ether_dream.broadcast.buffer_capacity;
+        if ((uint32_t)latencyPoints > runtimeMax)
+          latencyPoints.set(runtimeMax);
+      }
+    }
+
+    BaseClass::variableChangedCallback(variable, changedObject);
   }
 
   OIL_OBJECT(NannouLaserDevice);
 
 private:
+  uint32_t targetFps;
+
   // Data shared between the stream thread and the GUI rendering thread.
-  struct CallbackData {
+  struct CallbackData
+  {
     laser::FrameReceiver frame_rx;
     laser::FrameMsg msg;
     Device* laser_device;
@@ -282,7 +297,6 @@ private:
 
   PositiveInteger dacPointsPerSecond;
   PositiveInteger latencyPoints;
-  PositiveInteger targetFps;
   Percentage distancePerPoint;
   PositiveInteger blankDelayPoints;
   PositiveAngle anglePerPoint; // This is actually in radians but displayed to the user in degrees

@@ -19,7 +19,6 @@ SET (LASER_PLUGIN_SOURCES
   LaserGeometryShader.sglsl
   PointsLaserGeometryShader.sglsl
   LinesLaserGeometryShader.sglsl
-  LaserDeviceIdentifier.h
   NannouLaserDeviceIdentifier.h
   NannouLaserDevice.h
   NannouLaserDeviceFactory.h
