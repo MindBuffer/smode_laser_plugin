@@ -2,5 +2,5 @@ language = "C++"
 namespaces = ["laser"]
 [parse]
 parse_deps = true
-include = ["nannou_laser", "ether-dream"]
-extra_bindings = ["nannou_laser", "ether-dream"]
+include = ["nannou_laser", "ether-dream", "lasy"]
+extra_bindings = ["nannou_laser", "ether-dream", "lasy"]
