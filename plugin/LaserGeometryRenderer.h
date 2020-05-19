@@ -131,6 +131,105 @@ private:
   typedef GeometryLayerUser BaseClass;
 };
 
+class LaserShapeRenderer : public ShapeRenderer
+{
+public:
+  LaserShapeRenderer() {}
+
+  struct AtomicShapeRendererCallback : public ShapeList::Callback
+  {
+    AtomicShapeRendererCallback() : graphicsRenderer(nullptr), renderer(nullptr), opacity(1.0) {}
+
+    GraphicsRenderer* graphicsRenderer;
+    LaserShapeRenderer* renderer;
+    ShapeContext context;
+    double opacity;
+
+    bool processShape(const Shape& shape) override
+    {
+      context.getShapeLength().set(shape.getEdgeLength());
+      renderer->renderShape(*graphicsRenderer, shape, context, opacity);
+      context.gotoNextShape();
+      return true;
+    }
+  };
+
+
+  // ShapeRenderer
+  void renderShapes(GraphicsRenderer& renderer, const ShapeList& shapes, const glm::mat4& transform, double opacity) override
+  {
+// FIXME: ugly copy-paste from AtomicShapeRenderer
+    BaseClass::renderShapes(renderer, shapes, transform, opacity);
+
+    const ShapeList& modifiedShapes = ShapeModifier::applyModifiers(shapes, modifiers);
+
+    glm::vec2 canvasResolution = renderer.getTargetResolution();
+    glm::mat4 currentWindowMatrix = smode::glmWindowInverseMatrix * renderer.getWindowMatrix();
+    renderer.enterWindow(glm::inverse(currentWindowMatrix));
+    glm::mat4 subTransform = currentWindowMatrix * (placement ? placement->getTransformMatrix() : glm::mat4(1.f)) * transform;
+
+    AtomicShapeRendererCallback callback;
+    ShapeContext& attributes = callback.context;
+    attributes.getShapeIndex().set(0);
+    attributes.getNumShapes().set(shapes.size());
+    attributes.getShapeEdgePosition().set(0.0);
+    attributes.getOverallLength().set(shapes.computeTotalEdgeLength(canvasResolution));
+    attributes.getDistanceType().set(2);
+    attributes.getMaxAbsDistance().set(100.0);
+
+    callback.graphicsRenderer = &renderer;
+    callback.renderer = this;
+    callback.opacity = this->opacity * opacity;
+    modifiedShapes.processShapes(canvasResolution, subTransform, callback);
+
+    renderer.leaveWindow();
+  }
+
+  void renderShape(GraphicsRenderer& renderer, const Shape& shape, const ShapeContext& attributes, double opacity)
+  {
+    LaserDevice* laserDevice = device.getDevice();
+    if (!laserDevice)
+      return;
+
+    glm::vec2 targetResolution(renderer.getTargetResolution());
+    std::vector<Point> points;
+    points.reserve(100);
+    float edgeLengthPx = (float)shape.getEdgeLength();
+    float step = juce::jmax(edgeLengthPx / 100.f, 1.f);
+    glm::vec3 color((float)opacity);
+    for (float k = 0.f; k <= edgeLengthPx; k += step)
+    {
+      glm::vec2 position, edgeDirection, shapeNormal;
+      if (shape.getEdgeReferential(k, position, edgeDirection, shapeNormal))
+      {
+        Point point;
+        point.color = color;
+        point.position.x = 2.f * position.x / targetResolution.x - 1.f;
+        point.position.y = 1.f - 2.f * position.y / targetResolution.y;
+        point.weight = 1;
+        points.push_back(point);
+      }
+    }
+    if (shape.isClosed() && points.size())
+      points.push_back(points[0]);
+    laserDevice->addLineSequence(points);
+  }
+
+  // Element
+  int64_t computeVersion() const override
+    {return (int64_t)getCurrentFrameNumber();}
+
+  OIL_OBJECT(LaserShapeRenderer);
+
+protected:
+  typedef LaserDevice::Point Point;
+
+  LaserDeviceSelector device;
+
+private:
+  typedef ShapeRenderer BaseClass;
+};
+
 }; /* namespace smode */
 
 #endif // !SMODE_LASER_GEOMETRY_RENDERER_H_
