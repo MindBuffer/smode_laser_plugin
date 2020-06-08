@@ -99,6 +99,7 @@ private:
       const Point& point = points[i];
       res.push_back(withBlack(point)); 
       res.push_back(point);
+      res.push_back(point);
       res.push_back(withBlack(point));
     }
   }
