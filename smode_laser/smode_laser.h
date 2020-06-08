@@ -17,6 +17,12 @@ static const uint16_t BROADCAST_PORT = 7654;
 /// Communication with the DAC happens over TCP on port 7765.
 static const uint16_t COMMUNICATION_PORT = 7765;
 
+/// Enable draw path reordering by default.
+static const bool DEFAULT_ENABLE_DRAW_REORDER = true;
+
+/// Enable optimisations by default.
+static const bool DEFAULT_ENABLE_OPTIMISATIONS = true;
+
 /// The default rate at which the DAC will yield frames of points.
 static const uint32_t DEFAULT_FRAME_HZ = 60;
 
@@ -328,18 +334,24 @@ struct StreamConfig {
 struct InterpolationConfig {
   /// The minimum distance the interpolator can travel along an edge before a new point is
   /// required.
+  ///
+  /// By default, this value is `InterpolationConfig::DEFAULT_DISTANCE_PER_POINT`.
   float distance_per_point;
   /// The number of points to insert at the end of a blank to account for light modulator delay.
+  ///
+  /// By default, this value is `InterpolationConfig::DEFAULT_BLANK_DELAY_POINTS`.
   uint32_t blank_delay_points;
   /// The amount of delay to add based on the angle of the corner in radians.
+  ///
+  /// By default, this value is `InterpolationConfig::DEFAULT_RADIANS_PER_POINT`.
   float radians_per_point;
 };
 /// The default distance the interpolator can travel before a new point is required.
-static const float InterpolationConfig_DEFAULT_DISTANCE_PER_POINT = 0.1f;
+static const float InterpolationConfig_DEFAULT_DISTANCE_PER_POINT = 0.1;
 /// The default number of points inserted for the end of each blank segment.
 static const uint32_t InterpolationConfig_DEFAULT_BLANK_DELAY_POINTS = 10;
 /// The default radians per point of delay to reduce corner inertia.
-static const float InterpolationConfig_DEFAULT_RADIANS_PER_POINT = 0.6f;
+static const float InterpolationConfig_DEFAULT_RADIANS_PER_POINT = 0.6;
 
 /// A set of stream configuration parameters unique to `Frame` streams.
 struct FrameStreamConfig {
@@ -358,6 +370,29 @@ struct FrameStreamConfig {
   /// to achieve the desired `frame_hz` when drawing the path while also taking the
   /// `distance_per_point` and `radians_per_point` into consideration.
   uint32_t frame_hz;
+  /// Enable or disable frame optimisations.
+  ///
+  /// By default, optimisations are enabled. This includes path re-interpolation, as
+  /// re-interpolation is only possible using a euler circuit which is created during the
+  /// optimisation pass.
+  ///
+  /// Read more about the kinds of optimisations applied at the
+  /// [**lasy**](https://docs.rs/lasy/0.3.0/lasy/) API documentation.
+  ///
+  /// Returns `true` on success or `false` if the communication channel was closed.
+  bool enable_optimisations;
+  /// Enable or disable draw path reordering.
+  ///
+  /// When `true`, the optimisation pass will attempt to find a more optimal path for the drawing
+  /// of each line segment before performing interpolation. This is achieved by constructing a
+  /// euler graph with the minimum number of blanks required to complete the path, and then
+  /// finding a euler circuit through the path that minimises the number of sharp angles.
+  ///
+  /// When `false`, the draw order will follow the order in which segments were submitted via the
+  /// `Frame`.
+  ///
+  /// By default, this value is `true`.
+  bool enable_draw_reorder;
   /// Configuration options for eulerian circuit interpolation.
   InterpolationConfig interpolation_conf;
 };
@@ -483,6 +518,30 @@ void frame_stream_config_default(FrameStreamConfig *conf);
 
 /// Must be called in order to correctly clean up the frame stream.
 void frame_stream_drop(FrameStream stream);
+
+/// Enable or disable draw path reordering.
+///
+/// When `true`, the optimisation pass will attempt to find a more optimal path for the drawing
+/// of each line segment before performing interpolation. This is achieved by constructing a
+/// euler graph with the minimum number of blanks required to complete the path, and then
+/// finding a euler circuit through the path that minimises the number of sharp angles.
+///
+/// When `false`, the draw order will follow the order in which segments were submitted via the
+/// `Frame`.
+///
+/// By default, this value is `true`.
+bool frame_stream_enable_draw_reorder(const FrameStream *stream, bool enable);
+
+/// Enable or disable frame optimisations.
+///
+/// By default, optimisations are enabled. This includes path re-interpolation, as re-interpolation
+/// is only possible using a euler circuit which is created during the optimisation pass.
+///
+/// Read more about the kinds of optimisations applied at the
+/// [**lasy**](https://docs.rs/lasy/0.3.0/lasy/) API documentation.
+///
+/// Returns `true` on success or `false` if the communication channel was closed.
+bool frame_stream_enable_optimisations(const FrameStream *stream, bool enable);
 
 /// Returns whether or not the communication thread has closed.
 ///
