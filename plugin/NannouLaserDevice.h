@@ -90,6 +90,7 @@ public:
   // Send the current `frame_points` as a `FrameMsg` to the DAC callback.
   void update(const FrameInformation& frame) override
   {
+    BaseClass::update(frame);
     // Update Target FPS if it has changed
     uint32_t targetFps = (uint32_t)FramePerSecond::getRequestedFrameRate(this);
     if (targetFps != this->targetFps)
@@ -301,6 +302,7 @@ private:
   PositiveInteger blankDelayPoints;
   PositiveAngle anglePerPoint; // This is actually in radians but displayed to the user in degrees
 
+private:
   typedef LaserDevice BaseClass;
 };
 }; // namespace smode

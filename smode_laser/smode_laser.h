@@ -347,11 +347,11 @@ struct InterpolationConfig {
   float radians_per_point;
 };
 /// The default distance the interpolator can travel before a new point is required.
-static const float InterpolationConfig_DEFAULT_DISTANCE_PER_POINT = 0.1;
+static const float InterpolationConfig_DEFAULT_DISTANCE_PER_POINT = 0.1f;
 /// The default number of points inserted for the end of each blank segment.
 static const uint32_t InterpolationConfig_DEFAULT_BLANK_DELAY_POINTS = 10;
 /// The default radians per point of delay to reduce corner inertia.
-static const float InterpolationConfig_DEFAULT_RADIANS_PER_POINT = 0.6;
+static const float InterpolationConfig_DEFAULT_RADIANS_PER_POINT = 0.6f;
 
 /// A set of stream configuration parameters unique to `Frame` streams.
 struct FrameStreamConfig {

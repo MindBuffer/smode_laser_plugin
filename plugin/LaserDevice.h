@@ -35,7 +35,17 @@ public:
   // and cleared once per `update`.
   virtual void addLineSequence(const std::vector<Point>& new_points) = 0;
 
+  // ControlDevice
+  void update(const FrameInformation& frame) override
+  {
+    BaseClass::update(frame);
+    ioChannel.getConsumed().set(1);
+  }
+
   OIL_ABSTRACT_OBJECT(LaserDevice);
+
+private:
+  typedef ControlDevice BaseClass;
 };
 
 }; /* namespace smode */
