@@ -87,6 +87,24 @@ public:
     BaseClass::deinitializeDevice();
   }
 
+  void watermarkPointsIfNeeded(std::vector<Point>& frame_points, double time)
+  {
+    Engine& engine = *Engine::get(*this);
+    SmodeProgram& program = SmodeProgram::get();
+    if ((ioChannel.getConsumed() > ioChannel.getAllocated())
+      || !program.hasIOChannelQuantity(engine.getIOChannel().getMax()))
+    {
+      const float watermakedIntensity = ((sin(static_cast<float>(time)) + 1.f) / 2.f);
+      for (size_t i = 0; i < frame_points.size(); ++i)
+      {
+        Point& point = frame_points[i];
+        point.color[0] *= watermakedIntensity;
+        point.color[1] *= watermakedIntensity;
+        point.color[2] *= watermakedIntensity;
+      }
+    }
+  }
+
   // Send the current `frame_points` as a `FrameMsg` to the DAC callback.
   void update(const FrameInformation& frame) override
   {
@@ -106,6 +124,8 @@ public:
     // Write points if we're not muted, we're not in an error state and we actually have some.
     if (!frame_points.empty() && !mute && !getStatus().isError())
     {
+      watermarkPointsIfNeeded(frame_points, frame.getTime());
+
       // Layout *must* match or we will get very strange behaviour.
       jassert(sizeof(Point) == sizeof(laser::Point));
       const laser::Point* points = reinterpret_cast<const laser::Point*>(&frame_points[0]);
