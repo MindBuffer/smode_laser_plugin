@@ -52,6 +52,7 @@ public:
     if (res != laser::Result::Success) {
       const char* err = laser::api_last_error(&api);
       failureReason = "Failed to spawn DAC detection thread: " + String(err);
+      dac_detector = { 0, };
       return false;
     }
 
@@ -69,6 +70,7 @@ public:
   void deinitializeFactory() override
   {
     laser::detect_dacs_async_drop(dac_detector);
+    dac_detector = {0,};
     laser::api_drop(api);
     BaseClass::deinitializeFactory();
   }
@@ -78,7 +80,8 @@ public:
     // Collect the `DetectedDacs` from the asynchronous detector.
     laser::DetectedDac* dacs = nullptr;
     unsigned int dac_count = 0;
-    laser::available_dacs(&dac_detector, &dacs, &dac_count);
+    if (dac_detector.inner) // check if init has failed to avoid available_dacs crash (can happens when twice instance of Smode run in same computer)
+      laser::available_dacs(&dac_detector, &dacs, &dac_count);
     detected_dacs.clear();
     if (dac_count > 0) {
       detected_dacs.assign(dacs, dacs + dac_count);
@@ -109,7 +112,7 @@ public:
 
 private:
   mutable laser::Api api;
-  laser::DetectDacsAsync dac_detector;
+  laser::DetectDacsAsync dac_detector = { 0, };
   std::vector<laser::DetectedDac> detected_dacs;
   typedef DeviceFactory BaseClass;
 };
