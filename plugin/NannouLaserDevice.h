@@ -92,7 +92,7 @@ public:
     Engine& engine = *Engine::get(*this);
     SmodeProgram& program = SmodeProgram::get();
     if ((ioChannel.getConsumed() > ioChannel.getAllocated())
-      || !program.hasIOChannelQuantity(engine.getIOChannel().getMax()))
+      || !program.hasIOChannelQuantity(engine.getIOChannel().getAllocated()))
     {
       const float watermakedIntensity = ((sin(static_cast<float>(time)) + 1.f) / 2.f);
       for (size_t i = 0; i < frame_points.size(); ++i)
