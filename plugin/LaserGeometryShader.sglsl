@@ -25,7 +25,7 @@ struct LaserGeometryShader
   }
   
   vec3 makeLinearColor(vec3 c)
-    {return pow(c, vec3(1.0 / globals.renderingGamma));}
+    {return convertGamma(c, 1.0, globals.renderingGamma);}
 
   int computeWeight(float maskValue)
   {

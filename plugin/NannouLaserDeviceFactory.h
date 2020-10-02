@@ -30,19 +30,13 @@ public:
   NannouLaserDeviceFactory() {}
 
   String getName() const override
-  {
-    return "Laser";
-  }
+    {return "Laser";}
 
   bool matchName(const String& factoryName) const  override // retrocompatibility
-  {
-    return factoryName == getName();
-  }
+    {return factoryName == getName();}
 
   bool isEnumerable() const override
-  {
-    return true;
-  }
+    {return true;}
 
   bool initializeFactory(Engine& engine, String& failureReason) override
   {
@@ -56,16 +50,11 @@ public:
       return false;
     }
 
-    if (!BaseClass::initializeFactory(engine, failureReason)) {
-      return false;
-    }
-
-    return true;
+    return BaseClass::initializeFactory(engine, failureReason);
   }
 
   void configurationApplied() override
-  {
-  }
+    {}
 
   void deinitializeFactory() override
   {
@@ -83,9 +72,8 @@ public:
     if (dac_detector.inner) // check if init has failed to avoid available_dacs crash (can happens when twice instance of Smode run in same computer)
       laser::available_dacs(&dac_detector, &dacs, &dac_count);
     detected_dacs.clear();
-    if (dac_count > 0) {
+    if (dac_count > 0)
       detected_dacs.assign(dacs, dacs + dac_count);
-    }
 
     // Convert the detected DACs into `NannouLaserDeviceIdentifier`s that SMODE can work with.
     for (auto dac : detected_dacs) {
@@ -97,15 +85,14 @@ public:
 
   Device* createDevice(const DeviceIdentifier& identifier, GraphicsContext& graphics) const override
   {
-    for (auto dac : detected_dacs) {
+    laser::DetectedDac* detectedDac = nullptr;
+    for (auto dac : detected_dacs)
+    {
       String mac_string = macAddressToString(dac.kind.ether_dream.broadcast.mac_address);
-
-      if (mac_string == identifier.getFriendlyName()) {
-          NannouLaserDevice* device = new NannouLaserDevice(identifier, &api, dac);
-          return device;
-      }
+      if (mac_string == identifier.getFriendlyName())
+        detectedDac = &dac;
     }
-    return nullptr;
+    return new NannouLaserDevice(identifier, &api, detectedDac);
   }
 
   OIL_OBJECT(NannouLaserDeviceFactory);
