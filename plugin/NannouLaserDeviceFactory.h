@@ -114,7 +114,10 @@ public:
       if (mac_string == identifier.getFriendlyName())
         detectedDac = &dac;
     }
-    return new NannouLaserDevice(identifier, &api, detectedDac);
+    NannouLaserDevice* device = new NannouLaserDevice(identifier, &api, detectedDac);
+    device->removeStaticAllocationFlag(); // copy past from createObject
+    device->getClass()->setDefaultValuesRecursively(*device);
+    return device;
   }
 
   OIL_OBJECT(NannouLaserDeviceFactory);
