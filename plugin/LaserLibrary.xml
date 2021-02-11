@@ -6,7 +6,6 @@
   <include fromApi="true" file="SmodeSDK/SmodeSDK.h" public="true"/>
 
   <class name="NannouLaserDeviceFactory" base="DeviceFactory">
-    <attribute name="deviceBaseClass">LaserDevice</attribute>
     <attribute name="deviceClass">NannouLaserDevice</attribute>
   </class>
   <class name="NannouLaserDeviceIdentifier" base="StringDeviceIdentifier"/>
