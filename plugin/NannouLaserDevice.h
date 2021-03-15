@@ -17,8 +17,8 @@ class NannouLaserDevice : public LaserDevice
 {
 public:
   NannouLaserDevice(const DeviceIdentifier& identifier, laser::Api* _api, laser::DetectedDac* _dac)
-    : LaserDevice(identifier), dacPointsPerSecond(10000), latencyPoints(166), distancePerPoint(0.1), blankDelayPoints(10), anglePerPoint(0.6),
-      laser_api(_api), dac(_dac), callback_data(std::make_shared<CallbackData>()), targetFps(0)
+    : LaserDevice(identifier),
+      laser_api(_api), dac(_dac), callback_data(std::make_shared<CallbackData>())
   {
     dacPointsPerSecond.setParent(this);
     latencyPoints.setParent(this);
@@ -26,7 +26,7 @@ public:
     blankDelayPoints.setParent(this);
     anglePerPoint.setParent(this);
   }
-  NannouLaserDevice() : dacPointsPerSecond(10000), latencyPoints(166), distancePerPoint(0.1), blankDelayPoints(10), anglePerPoint(0.6), targetFps(0) {}
+  NannouLaserDevice() {}
 
   // Device
   bool initializeDevice() override
@@ -212,7 +212,7 @@ public:
   OIL_OBJECT(NannouLaserDevice);
 
 private:
-  uint32_t targetFps;
+  uint32_t targetFps = 0;
 
   // Data shared between the stream thread and the GUI rendering thread.
   struct CallbackData
@@ -325,11 +325,11 @@ private:
   // The buffer used for collecting points from each of the geometry renderers.
   std::vector<Point> frame_points;
 
-  PositiveInteger dacPointsPerSecond;
-  PositiveInteger latencyPoints;
-  Percentage distancePerPoint;
-  PositiveInteger blankDelayPoints;
-  PositiveAngle anglePerPoint; // This is actually in radians but displayed to the user in degrees
+  PositiveInteger dacPointsPerSecond = PositiveInteger(10000);
+  PositiveInteger latencyPoints = PositiveInteger(166);
+  Percentage distancePerPoint = Percentage(0.1);
+  PositiveInteger blankDelayPoints = PositiveInteger(10);
+  PositiveAngle anglePerPoint = PositiveAngle(0.6); // This is actually in radians but displayed to the user in degrees
 
 private:
   typedef LaserDevice BaseClass;
