@@ -60,7 +60,7 @@ public:
 #endif // WIN32
   }
 
-  bool initializeFactory(Engine& engine, String& failureReason) override
+  bool initializeFactory(String& failureReason) override
   {
     float dac_timeout_secs = 1.5;
     laser::api_new(&api);
@@ -72,7 +72,7 @@ public:
       return false;
     }
 
-    return BaseClass::initializeFactory(engine, failureReason);
+    return BaseClass::initializeFactory(failureReason);
   }
 
   void configurationApplied() override
@@ -86,7 +86,7 @@ public:
     BaseClass::deinitializeFactory();
   }
 
-  bool enumerateDevices(Engine& engine, std::vector<DeviceIdentifier* >& res, String& failureReason) override
+  bool enumerateDevices(std::vector<DeviceIdentifier* >& res, String& failureReason) override
   {
     // Collect the `DetectedDacs` from the asynchronous detector.
     laser::DetectedDac* dacs = nullptr;
